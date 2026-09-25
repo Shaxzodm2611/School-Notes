@@ -1,0 +1,30 @@
+global
+function math(context) {
+    return context.scopes.some(scope => scope.startsWith("meta.math"));
+}
+endglobal
+
+context math(context)
+snippet `(?<![A-Za-z0-9_\\^])([A-Za-z0-9]+)/([A-Za-z0-9])` "Fraction from a/b" A
+\frac{``rv = m[1]``}{``rv = m[2]``$1}$0
+endsnippet
+
+context math(context)
+snippet `(?<![A-Za-z\\])sqrt` "Square root" A
+\sqrt{$1}$0
+endsnippet
+
+context math(context)
+snippet `(?<![A-Za-z\\])frac` "Fraction" A
+\frac{$1}{$2}$0
+endsnippet
+
+snippet ;fig "Figure with image" bA
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/$1}
+    \caption{$2}
+    \label{fig:$3}
+\end{figure}
+$0
+endsnippet
