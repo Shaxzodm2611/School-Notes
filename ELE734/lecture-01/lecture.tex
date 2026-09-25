@@ -1,0 +1,207 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{lecturenotes}
+\usepackage{multicol}
+\lectureheader{ELE734}{1}
+\begin{document}
+\notesection{MOS Devices}
+\notedefinition{Feature Size}{Channel length of a MOSFET}
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[height=4cm]{figures/nmos-device-structure.png}
+        \caption{NMOS Device Structure}
+        \label{fig:NMOS-Device-Structure}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[height=4cm]{figures/cmos-device-annotated.png}
+        \caption{CMOS Device Structure}
+        \label{fig:CMOS-Device-Structure}
+    \end{minipage}
+\end{figure}
+
+
+CMOS devices combine both NMOS and PMOS into a single device.
+
+\begin{notecircuit}[scale=0.5, transform shape]{CMOS Device}
+    \draw (0, 1) node[pmos, arrowmos] (pmos) {$M_1$};
+    \draw (0, -1) node[nmos, arrowmos] (nmos) {$M_2$};
+
+    \draw(pmos.drain) -- (nmos.drain) coordinate[midway] (out);
+    \node[right] at (out) {$Y$};
+
+    \draw(pmos.gate) -- (nmos.gate) coordinate[midway] (in);
+    \node [left] at (in) {$A$};
+
+    \draw(pmos.source) -- ++(0,0.8) node[vcc] {$V_{DD}$};
+    \draw (nmos.source) -- ++(0,-0.8) node[ground] {};
+\end{notecircuit}
+
+\subnotesection{CMOS vs. PMOS or NMOS}
+\begin{itemize}
+    \item[-] \textbf{PMOS} is more difficult to build
+          \begin{itemize}
+              \item In Planar layout, PMOS is only $\frac{1}{2}$ as fast as NMOS
+              \item Brings no new functionalities vs. NMOS
+          \end{itemize}
+    \item[-] \textbf{NMOS} on the other hand has high static power consumption
+          \begin{itemize}
+              \item NMOS provides direct path from $S \rightarrow GND$ when it is on. Therefore it is not a perfect switch, and cannot pull voltage all the way to $V_{DD}$
+          \end{itemize}
+\end{itemize}
+
+\notedefinition{PMOS \& NMOS Pros and Cons}{
+    A PMOS device is \textbf{half the speed} as a NMOS device, and cannot pull voltage all the way \textbf{DOWN} to GND. \\ \hfill \break
+    A NMOS device is not a perfect switch, and cannot pull voltage all the way \textbf{UP} to $V_{DD}$
+}
+
+\notesection{Pass Transistor Style and Transmission Gate Style}
+A pass transistor style only uses NMOS devices and is commonly found in FPGA's. A transmission gate design style can use both NMOS and PMOS devices.
+\subnotesection{Pass Transistor Style}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/nmos-pass-transistor-ideal-vs-actual.png}
+        \caption{Ideal Pass Transistor vs. Non Ideal}
+        \label{fig:pass-transistor-ideal-vs-actual}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.48\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/nmos-pass-chain-no-restoration.png}
+        \caption{Con of Pass Transistor Non-ideal Behaviour}
+        \label{fig:chain-pass-no-res}
+    \end{minipage}
+\end{figure}
+
+\notedefinition{Pass Transmission Summary}{
+    Boosting is needed to increase gate voltage such that it is 1 threshhold voltage higher than normal $V_{DD}$.
+    \par\vspace{10pt}
+    \begin{tabularx}{\linewidth}{@{}>{\color{NoteMuted}}l@{\hspace{1em}}X@{}}
+        Pro  & Only uses NMOS to do computation                             \\[4pt]
+        Cost & Requires the use of an additional power distribution network
+    \end{tabularx}
+}
+
+\subnotesection{Transmission Gate Style}
+
+Below is a figure demonstrating how a transmission gate style looks like:
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/transmission-gate-off-on.png}
+    \caption{Transmission Gate in Off and On State}
+    \label{fig:trans-gate-in-and-on}
+\end{figure}
+
+When the transmission gate is in the ON state, the NMOS contributes: $V_{in} - V_{th}$ to the output whilst the PMOS contributes the full $V_{in}$.
+\notedefinition{Gate Trasmission Style Summary}{
+    Whilst it does not have the same downfall as the pass transmission style, it costs \textbf{doubles the size}
+}
+
+
+\notesection{CMOS Inverter}
+\vspace{-4pt}
+\noindent
+\centering
+\begin{minipage}[t]{0.25\linewidth}
+    \begin{notecircuit}[scale=0.56, transform shape]{CMOS Inverter}
+        \draw (0,0.75) node[pmos, arrowmos] (inv-pmos) {};
+        \draw (0,-0.75) node[nmos, arrowmos] (inv-nmos) {};
+
+        \draw (inv-pmos.drain) -- (inv-nmos.drain) coordinate[midway] (inv-out);
+        \draw (inv-pmos.gate) -- (inv-nmos.gate) coordinate[midway] (inv-in);
+        \draw (inv-in) -- ++(-1.6,0) coordinate (inv-in-end)
+        node[left] {$\mathrm{in}$};
+        \draw (inv-out) -- ++(1.6,0) coordinate (inv-out-end)
+        node[right] {$\mathrm{out}$};
+
+        \node[above, color=NoteAccent] at (-1.25,0) {$0$};
+        \node[below, color=red!75!black] at (-1.25,0) {$1$};
+        \node[above, color=NoteAccent] at (1.25,0) {$1$};
+        \node[below, color=red!75!black] at (1.25,0) {$0$};
+
+        \draw (inv-pmos.source) -- ++(0,0.45) node[vcc] {$3\,\mathrm{V}$};
+        \draw (inv-nmos.source) -- ++(0,-0.45) node[ground] {};
+        \node at (0,-2.75) {\texttt{out = !in}};
+    \end{notecircuit}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.42\linewidth}
+    \begin{notecircuit}[scale=0.56, transform shape]{CMOS buffer $\Rightarrow$ 2 inverter}
+        \draw (-1.2,0.75) node[pmos, arrowmos] (buf-pmos-1) {};
+        \draw (-1.2,-0.75) node[nmos, arrowmos] (buf-nmos-1) {};
+        \draw (1.2,0.75) node[pmos, arrowmos] (buf-pmos-2) {};
+        \draw (1.2,-0.75) node[nmos, arrowmos] (buf-nmos-2) {};
+
+        \draw (buf-pmos-1.drain) -- (buf-nmos-1.drain) coordinate[midway] (buf-mid);
+        \draw (buf-pmos-1.gate) -- (buf-nmos-1.gate) coordinate[midway] (buf-in-1);
+        \draw (buf-pmos-2.drain) -- (buf-nmos-2.drain) coordinate[midway] (buf-out);
+        \draw (buf-pmos-2.gate) -- (buf-nmos-2.gate) coordinate[midway] (buf-in-2);
+
+        \draw (buf-in-1) -- ++(-1.15,0) coordinate (buf-in-end)
+        node[left] {$\mathrm{in}$};
+        \draw (buf-mid) -- (buf-in-2);
+        \draw (buf-out) -- ++(1.15,0) coordinate (buf-out-end)
+        node[right] {$\mathrm{out}$};
+
+        \node[above, color=NoteAccent] at (-2.55,0) {$0$};
+        \node[below, color=red!75!black] at (-2.55,0) {$1$};
+        \node[above, color=NoteAccent] at (0,0) {$1$};
+        \node[below, color=red!75!black] at (0,0) {$0$};
+        \node[above, color=NoteAccent] at (2.1,0) {$0$};
+        \node[below, color=red!75!black] at (2.1,0) {$1$};
+
+        \draw (buf-pmos-1.source) -- ++(0,0.45) node[vcc] {$3\,\mathrm{V}$};
+        \draw (buf-nmos-1.source) -- ++(0,-0.45) node[ground] {};
+        \draw (buf-pmos-2.source) -- ++(0,0.45) node[vcc] {$3\,\mathrm{V}$};
+        \draw (buf-nmos-2.source) -- ++(0,-0.45) node[ground] {};
+        \node at (0,-2.75) {\texttt{out = in}};
+    \end{notecircuit}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.29\linewidth}
+    \begin{notecircuit}[scale=0.54, transform shape]{bad buffer}
+        \draw (0,0.75) node[nmos, arrowmos] (bad-nmos) {};
+        \draw (0,-0.75) node[pmos, arrowmos] (bad-pmos) {};
+
+        \draw (bad-nmos.source) -- (bad-pmos.source) coordinate[midway] (bad-out);
+        \draw (bad-nmos.gate) -- (bad-pmos.gate) coordinate[midway] (bad-in);
+        \draw (bad-in) -- ++(-1.5,0);
+        \draw (bad-out) -- ++(2.1,0);
+
+        \node[above, color=NoteAccent] at (-1.2,0) {$1$};
+        \node[below, color=red!75!black] at (-1.2,0) {$0$};
+        \node[anchor=west, color=NoteAccent] at (0.95,0.22) {$1\;(2.3\,\mathrm{V})$};
+        \node[anchor=west, color=red!75!black] at (0.95,-0.22) {$0\;(0.7\,\mathrm{V})$};
+        \node[color=NoteAccent] at (0.75,0.85) {\textsf{on}};
+        \node[color=red!75!black] at (1.4,0.85) {\textsf{off}};
+        \node[color=NoteAccent] at (0.75,-0.85) {\textsf{off}};
+        \node[color=red!75!black] at (1.4,-0.85) {\textsf{on}};
+
+        \draw (bad-nmos.drain) -- ++(0,0.45) node[vcc] {$3\,\mathrm{V}$};
+        \draw (bad-pmos.drain) -- ++(0,-0.45) node[ground] {};
+    \end{notecircuit}
+\end{minipage}
+
+\notedefinition{Why Buffer?}{A buffer is useful since it re-generates the signal. It can be useful for driving loads (large capacitance) like along wire and the like}
+
+\subnotesection{CMOS - Organization of its Networks}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/CMOS-network-organization.png}
+    \caption{Why CMOS Circuits are Organized the Way they are}
+    \label{fig:CMOS-network-organization}
+\end{figure}
+
+PMOS \textbf{must} be a complementary network of an NMOS. Meaning that the PMOS networks source must always be tied to $V_{DD}$ and the NMOS networks source must always be tied to $GND$.
+
+\notebox{Complementary Networks}{
+    \begin{itemize}
+        \item PMOS is on $\Rightarrow$ NMOS must be off $\Rightarrow \text{output} = V_{DD}$
+        \item NMOS is on $\Rightarrow$ PMOS must be off $\Rightarrow \text{output} = 0$
+    \end{itemize}
+}
+
+
+\end{document}

@@ -28,3 +28,13 @@ snippet ;fig "Figure with image" bA
 \end{figure}
 $0
 endsnippet
+
+snippet ;def "Note definition" bA
+\notedefinition{$1}{$2}
+$0
+endsnippet
+
+snippet ;keq "Key equation" bA
+\keyequation{$1}{$2}
+$0
+endsnippet
