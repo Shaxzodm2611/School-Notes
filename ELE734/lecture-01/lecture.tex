@@ -1,6 +1,8 @@
 \documentclass[a4paper,11pt]{article}
 \usepackage{lecturenotes}
 \usepackage{multicol}
+\usepackage{scrextend}
+
 \lectureheader{ELE734}{1}
 \begin{document}
 \notesection{MOS Devices}
@@ -104,6 +106,7 @@ When the transmission gate is in the ON state, the NMOS contributes: $V_{in} - V
 \notesection{CMOS Inverter}
 \vspace{-4pt}
 \noindent
+\begingroup
 \centering
 \begin{minipage}[t]{0.25\linewidth}
     \begin{notecircuit}[scale=0.56, transform shape]{CMOS Inverter}
@@ -182,6 +185,8 @@ When the transmission gate is in the ON state, the NMOS contributes: $V_{in} - V
         \draw (bad-pmos.drain) -- ++(0,-0.45) node[ground] {};
     \end{notecircuit}
 \end{minipage}
+\par
+\endgroup
 
 \notedefinition{Why Buffer?}{A buffer is useful since it re-generates the signal. It can be useful for driving loads (large capacitance) like along wire and the like}
 
@@ -203,5 +208,194 @@ PMOS \textbf{must} be a complementary network of an NMOS. Meaning that the PMOS 
     \end{itemize}
 }
 
+\clearpage
+\notesection{CMOS Logic Circuits}
+CMOS logic consists of \textcolor{red}{Pull Up/Pull Down} networks, made of PMOS and NMOS transistors respectively.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.82\linewidth]{figures/CMOS-output-states.png}
+    \caption{Output states of CMOS logic gates}
+    \label{fig:cmos-output-states}
+\end{figure}
+
+\notebox{Network notation}{
+    \begin{tabularx}{\linewidth}{@{}>{\centering\arraybackslash}X!{\color{NoteRule}\vrule width 0.6pt}>{\centering\arraybackslash}X@{}}
+        {\color{NoteAccent}\fontsize{28}{32}\selectfont\boldmath$+$}\par
+        {\sffamily\bfseries\small Parallel}
+         &
+        {\color{NoteAccent}\fontsize{28}{32}\selectfont\boldmath$\cdot$}\par
+        {\sffamily\bfseries\small Series}
+    \end{tabularx}
+}
+\hfill \break
+\textbf{Statements Regarding PDN/PUNs}
+\begin{itemize}
+    \item Series transistors are in a \textbf{ON} state if all of the transistors are ON
+    \item Parallel transistors are in a \textbf{ON} state if any of the transistors are ON
+    \item In general, when given a boolean expression, we want to find the expression s.t: $\bar{Y} = 0$.
+          \begin{itemize}
+              \item Consider $Y = \overline{A + B}$, to get the according CMOS expression, we simply evaluate  the expression for when $\bar{Y}$ is 0, which is simply the expression underneath the outer bar.
+          \end{itemize}
+\end{itemize}
+
+\notedefinition{CMOS Gate Rule}{A basic CMOS gate is a naturally inverting operator. If the expression has an outer bar, i.e.
+    $$
+        Y = \overline{A\cdot B + C \cdot D}
+    $$
+    the expression underneath the outer bar is the PDN expression
+}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/CMOS-output-states.png}
+    \caption{CMOS Output States}
+    \label{fig:CMOS-output-states}
+\end{figure}
+
+
+\begin{notetable}{XX}{\textbf{PDN} & \textbf{PUN}}
+    Appear series in PDN & parallel in PUN \\
+    Appear parallel in PDN & Series in PUN \\
+\end{notetable}
+
+\subnotesection{Inverter}
+
+\noindent
+\begin{minipage}[t]{0.46\linewidth}
+    \begin{notecircuit}[scale=0.78, transform shape]{Digital logic symbol}
+        \path[use as bounding box] (-2,-1.5) rectangle (2,1.5);
+        \draw (0,0) node[not port] (logic-inverter) {};
+        \draw (logic-inverter.in) -- ++(-1,0) node[left] {$A$};
+        \draw (logic-inverter.out) -- ++(1,0) node[right] {$Y=\overline{A}$};
+    \end{notecircuit}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.52\linewidth}
+    \begin{notecircuit}[scale=0.56, transform shape]{CMOS circuit}
+        \draw (0,0.9) node[pmos, arrowmos] (logic-pmos) {};
+        \draw (0,-0.9) node[nmos, arrowmos] (logic-nmos) {};
+
+        \draw (logic-pmos.drain) -- (logic-nmos.drain) coordinate[midway] (logic-out);
+        \draw (logic-pmos.gate) -- (logic-nmos.gate) coordinate[midway] (logic-in);
+        \draw (logic-in) -- ++(-1.4,0) node[left] {$A$};
+        \draw (logic-out) -- ++(2.3,0) node[right] {$Y$};
+
+        \draw (logic-pmos.source) -- ++(0,0.45) node[vcc] {$V_{DD}$};
+        \draw (logic-nmos.source) -- ++(0,-0.45) node[ground] {};
+        \node[anchor=west, color=NoteAccent] at (0.55,0.9) {\textsf{Pull-up (PMOS)}};
+        \node[anchor=west, color=NoteAccent] at (0.55,-0.9) {\textsf{Pull-down (NMOS)}};
+    \end{notecircuit}
+\end{minipage}
+\par
+
+\subnotesection{NAND Gate}
+\noindent
+\begin{minipage}[t]{0.27\linewidth}
+    \begin{notecircuit}[scale=0.75, transform shape]{Digital logic symbol}
+        \path[use as bounding box] (-1.8,-2.5) rectangle (1.8,2.5);
+        \draw (0,0) node[nand port] (nand-symbol) {};
+        \draw (nand-symbol.in 1) -- ++(-0.7,0) node[left] {$A$};
+        \draw (nand-symbol.in 2) -- ++(-0.7,0) node[left] {$B$};
+        \draw (nand-symbol.out) -- ++(0.7,0) node[right] {$Y$};
+    \end{notecircuit}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.43\linewidth}
+    \begin{notecircuit}[scale=0.58, transform shape]{CMOS circuit}
+        \draw (-0.9,1.1) node[pmos, arrowmos] (nand-pmos-a) {};
+        \draw (0.9,1.1) node[pmos, arrowmos] (nand-pmos-b) {};
+        \draw (0,-0.9) node[nmos, arrowmos] (nand-nmos-a) {};
+        \draw (0,-2.2) node[nmos, arrowmos] (nand-nmos-b) {};
+
+        \draw (nand-pmos-a.source) -- ++(0,0.4) coordinate (nand-top-left);
+        \draw (nand-pmos-b.source) -- ++(0,0.4) coordinate (nand-top-right);
+        \draw (nand-top-left) -- (nand-top-right) coordinate[midway] (nand-supply);
+        \draw (nand-supply) -- ++(0,0.4) node[vcc] {$V_{DD}$};
+
+        \draw (nand-pmos-a.drain) -- ++(0,-0.4) coordinate (nand-bottom-left);
+        \draw (nand-pmos-b.drain) -- ++(0,-0.4) coordinate (nand-bottom-right);
+        \draw (nand-bottom-left) -- (nand-bottom-right) coordinate[midway] (nand-pun-out);
+        \draw (nand-pun-out) -- (nand-nmos-a.drain) coordinate[midway] (nand-out);
+        \draw (nand-out) -- ++(2.3,0) node[right] {$Y$};
+
+        \draw (nand-nmos-a.source) -- (nand-nmos-b.drain);
+        \draw (nand-nmos-b.source) -- ++(0,-0.4) node[ground] {};
+        \draw (nand-pmos-a.gate) -- ++(-0.4,0) node[left] {$A$};
+        \draw (nand-pmos-b.gate) -- ++(-0.4,0) node[left] {$B$};
+        \draw (nand-nmos-a.gate) -- ++(-0.55,0) node[left] {$A$};
+        \draw (nand-nmos-b.gate) -- ++(-0.55,0) node[left] {$B$};
+
+        \node[anchor=west, color=NoteAccent] at (1.35,1.1) {\textsf{Pull-up (PMOS)}};
+        \node[anchor=west, color=NoteAccent] at (0.55,-1.55) {\textsf{Pull-down (NMOS)}};
+    \end{notecircuit}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.26\linewidth}
+    \centering
+    {\sffamily\small\bfseries\color{NoteMuted}Network equations\par}
+    \vspace{10pt}
+    {\sffamily\scriptsize\bfseries\color{NoteAccent}PULL-DOWN (PDN)\par}
+    \vspace{2pt}
+    {$\displaystyle \mathrm{PDN}=A\cdot B$\par}
+    \vspace{12pt}
+    {\sffamily\scriptsize\bfseries\color{NoteAccent}PULL-UP (PUN)\par}
+    \vspace{2pt}
+    {$\displaystyle \mathrm{PUN}=\overline{A}+\overline{B}$\par}
+\end{minipage}
+\par
+
+\subnotesection{NOR Gate}
+\noindent
+\begin{minipage}[t]{0.27\linewidth}
+    \begin{notecircuit}[scale=0.75, transform shape]{Digital logic symbol}
+        \path[use as bounding box] (-1.8,-2.5) rectangle (1.8,2.5);
+        \draw (0,0) node[nor port] (nor-symbol) {};
+        \draw (nor-symbol.in 1) -- ++(-0.7,0) node[left] {$A$};
+        \draw (nor-symbol.in 2) -- ++(-0.7,0) node[left] {$B$};
+        \draw (nor-symbol.out) -- ++(0.7,0) node[right] {$Y$};
+    \end{notecircuit}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.43\linewidth}
+    \begin{notecircuit}[scale=0.58, transform shape]{CMOS circuit}
+        \draw (0,1.7) node[pmos, arrowmos] (nor-pmos-a) {};
+        \draw (0,0.4) node[pmos, arrowmos] (nor-pmos-b) {};
+        \draw (-0.9,-1.45) node[nmos, arrowmos] (nor-nmos-a) {};
+        \draw (0.9,-1.45) node[nmos, arrowmos] (nor-nmos-b) {};
+
+        \draw (nor-pmos-a.source) -- ++(0,0.4) node[vcc] {$V_{DD}$};
+        \draw (nor-pmos-a.drain) -- (nor-pmos-b.source);
+        \draw (nor-pmos-b.drain) -- ++(0,-0.4) coordinate (nor-out);
+        \draw (nor-out) -- ++(2.3,0) node[right] {$Y$};
+
+        \draw (nor-nmos-a.drain) -- ++(0,0.4) coordinate (nor-top-left);
+        \draw (nor-nmos-b.drain) -- ++(0,0.4) coordinate (nor-top-right);
+        \draw (nor-top-left) -- (nor-top-right) coordinate[midway] (nor-pdn-in);
+        \draw (nor-out) -- (nor-pdn-in);
+
+        \draw (nor-nmos-a.source) -- ++(0,-0.4) coordinate (nor-bottom-left);
+        \draw (nor-nmos-b.source) -- ++(0,-0.4) coordinate (nor-bottom-right);
+        \draw (nor-bottom-left) -- (nor-bottom-right) coordinate[midway] (nor-ground);
+        \draw (nor-ground) -- ++(0,-0.4) node[ground] {};
+
+        \draw (nor-pmos-a.gate) -- ++(-0.55,0) node[left] {$A$};
+        \draw (nor-pmos-b.gate) -- ++(-0.55,0) node[left] {$B$};
+        \draw (nor-nmos-a.gate) -- ++(-0.4,0) node[left] {$A$};
+        \draw (nor-nmos-b.gate) -- ++(-0.4,0) node[left] {$B$};
+
+        \node[anchor=west, color=NoteAccent] at (0.55,1.05) {\textsf{Pull-up (PMOS)}};
+        \node[anchor=west, color=NoteAccent] at (1.35,-1.45) {\textsf{Pull-down (NMOS)}};
+    \end{notecircuit}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.26\linewidth}
+    \centering
+    {\sffamily\small\bfseries\color{NoteMuted}Network equations\par}
+    \vspace{10pt}
+    {\sffamily\scriptsize\bfseries\color{NoteAccent}PULL-DOWN (PDN)\par}
+    \vspace{2pt}
+    {$\displaystyle \mathrm{PDN}=A+B$\par}
+    \vspace{12pt}
+    {\sffamily\scriptsize\bfseries\color{NoteAccent}PULL-UP (PUN)\par}
+    \vspace{2pt}
+    {$\displaystyle \mathrm{PUN}=\overline{A}\cdot\overline{B}$\par}
+\end{minipage}
+\par
 
 \end{document}

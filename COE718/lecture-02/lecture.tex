@@ -1,0 +1,344 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{lecturenotes}
+\usepackage{graphicx}
+\lectureheader{COE718}{2}
+
+% Keep each source image with the passage that introduced it.
+\newcommand{\sourcefigure}[2]{%
+  \par\smallskip\begin{center}
+    \includegraphics[width=\linewidth,height=#2,keepaspectratio]{figures/#1}%
+  \end{center}\smallskip}
+
+\begin{document}
+
+\notesection{Processor Architectures}
+\subnotesection{Von Neumann Architecture}
+\begin{itemize}
+  \item Memory holds data and instructions.
+  \item Central processing unit fetches instructions from memory.
+  \item Separate CPU and memory distinguishes programmable computer.
+  \item Specialized CPU registers help out: PC, IR, general-purpose, etc.
+\end{itemize}
+
+\subnotesection{Harvard Architecture}
+\begin{itemize}
+  \item Cannot use self-modifying code.
+  \item Allows two simultaneous memory fetches.
+  \item Commonly used in DSP applications (for streaming data).
+\end{itemize}
+\sourcefigure{image-172521.png}{0.55\textheight}
+
+\notesection{Instruction Execution Process}
+\begin{enumerate}
+  \item \textbf{Instruction fetch:} Read next instruction into the IR. PC has instruction address.
+  \item \textbf{Interpretation:} Decode the op-code, get required operands and route them to ALU.
+  \item \textbf{Sequencing:} Determine the address of the next instruction and load into PC.
+  \item \textbf{Execution:} Generate control signals of ALU for execution.
+\end{enumerate}
+
+\notesection{System Organization}
+\sourcefigure{image-172819.png}{0.58\textheight}
+
+\notesection{Interrupts}
+Computers have two ways to determine conditions that exist in internal and external circuits:
+\begin{enumerate}
+  \item Software instructions that jump to a sub-routine on a \textbf{flag status}.
+  \item Response to hardware signal via \textbf{interrupts} which force the program to call interrupt-handling sub-routines.
+\end{enumerate}
+Interrupts \emph{take no} additional processing \textbf{unless} an action is required, and are often the only way for successful real-time programming.
+
+\subnotesection{Instruction Cycle with Interrupts}
+Generally, a CPU checks for interrupts at the end of each instruction.
+
+The \textbf{Interrupt Handler} program identifies the nature/source of an interrupt and performs whatever action is needed:
+\begin{itemize}
+  \item Takes control after the interrupt.
+  \item Transfers back control to the interrupted program so it may resume execution from the point of interruption.
+  \item Point of interruption can occur anywhere in the program.
+  \item State of the program is saved.
+\end{itemize}
+\sourcefigure{image-173334.png}{0.48\textheight}
+
+\subnotesection{Multiple Interrupts (Sequential)}
+\begin{itemize}
+  \item Disables interrupts to complete the interrupting task.
+  \item Additional interrupts remain pending until interrupts are re-enabled. Then they are considered in order. After completion of the current interrupt routine, the processor checks for additional interrupts.
+\end{itemize}
+
+\subnotesection{Multiple Interrupts (Nested)}
+\begin{itemize}
+  \item A higher priority interrupt causes a lower priority interrupt to wait.
+  \item A lower priority interrupt handler is interrupted.
+\end{itemize}
+
+\notesection{Processor Operation Modes}
+\subnotesection{User Mode (Some App Outside of Kernel)}
+\begin{itemize}
+  \item A user program is running.
+  \item Certain instructions are not allowed.
+  \item Memory mapping (base/bound) is enabled.
+\end{itemize}
+\subnotesection{Supervisor (Kernel/System) Mode}
+\begin{itemize}
+  \item Operating system is running.
+  \item All instructions are allowed.
+  \item Memory mapping is disabled.
+\end{itemize}
+A single \textbf{PSW} (processor-status word) sets the above two modes, i.e., \texttt{PSW-bit = 1 //for supervisor mode}.
+
+\notesection{Cache Memory}
+Cache is expensive but \emph{very fast} memory that is directly connected to the CPU interacting with the slower but larger main memory.
+
+The processor first checks if the address word is in the cache; if it misses, it checks the main memory. After it checks the main memory, a block of memory containing the word is moved to the cache.
+\sourcefigure{image-173857.png}{0.47\textheight}
+
+\notesection{CPU Pipelining}
+It improves performance by increasing instruction throughput (IT).
+
+\begin{minipage}[t]{0.48\linewidth}
+  \textbf{Pipelining is easy when:}
+  \begin{itemize}
+    \item All instructions are of the same length.
+    \item Few instruction formats.
+    \item Memory operands appear only in loads and stores.
+  \end{itemize}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+  \textbf{Pipelining is hard because of:}
+  \begin{itemize}
+    \item Structural hazards (same memory for code/data).
+    \item Control hazards (conditionals/branches/etc.).
+    \item Data hazards (read after write).
+  \end{itemize}
+\end{minipage}
+
+\textit{Typical 6-Stage Pipeline}
+
+Fetch $>$ Decode $>$ Reg $>$ ALU $>$ Execute $>$ Mem $>$ Res (store)
+
+\notesection{CPU Power Consumption}
+\textbf{Power vs. Energy}
+\begin{itemize}
+  \item Heat depends on power consumption.
+  \item Battery life depends on energy consumption.
+\end{itemize}
+Some power-saving strategies are:
+\begin{itemize}
+  \item Reduce power supply voltage.
+  \item Run at lower clock frequency.
+\end{itemize}
+
+\notesection{Three Types of Instruction Sets}
+\subnotesection{ARM Instruction Set}
+\begin{itemize}
+  \item Instructions are 32 bits wide.
+  \item Original RISC (lots of parallelism).
+  \item ``Load/Store'' architecture.
+\end{itemize}
+\subnotesection{Thumb Instruction Set}
+\begin{itemize}
+  \item Subset of ARM instructions with some restrictions.
+  \item Instructions are 16 bits wide (like CISC).
+  \item Intended for compilers.
+  \item Less parallelism, longer instruction sequences.
+  \item Total code is 30\% smaller vs. ARM.
+\end{itemize}
+\subnotesection{Jazelle Instruction Set}
+\begin{itemize}
+  \item Java byte codes (8-bit).
+\end{itemize}
+\sourcefigure{image-174602.png}{0.42\textheight}
+
+\subnotesection{Thumb2}
+Thumb2 uses a mix of 16 and 32 bit instructions by using a \emph{unified assembler language}. Adds a suffix to the instruction to let the compiler know if it is 16-bit or 32-bit.
+
+Each Thumb instruction correlates to an equivalent 32-bit ARM instruction version. Using Thumb2 leads to a decreased code size which in turn leads to less memory usage and lower power consumption.
+
+Thumb \textbf{still} has 32-bit buses and 32-bit data widths.
+
+Thumb is used for limited memory as well as lower power applications.
+
+\textbf{Pipelined Instruction Fetch, Decode, Execute}
+\begin{description}
+  \item[FETCH (P (32-bit)):] 16-bit instruction is fetched from memory.
+  \item[DECODE (PC + 4):] Decompress Thumb instruction, decode ARM instructions and select registers.
+  \item[EXECUTE (PC + 8):] Read registers from the RegisterBank, perform Shift and ALU operations, write register(s) back to RegisterBank.
+\end{description}
+
+\textbf{Latency:} Time it takes for an instruction to get through the pipeline.\par
+\textbf{Throughput:} Number of instructions executed per clock period (\emph{C.P.I}, clocks per instruction).
+
+\subnotesection{ARM7 Architecture}
+\begin{itemize}
+  \item It has a load/store architecture.
+  \item Some multi-register operations can take multiple cycles.
+  \item All instructions can be executed conditionally.
+\end{itemize}
+It is a 3-stage pipeline CPU, where each stage takes 1 clock cycle.
+
+\textbf{Features}
+\begin{itemize}
+  \item \textbf{Combined shift and ALU execution stage}
+    \begin{itemize}
+      \item A single instruction can identify one of its two source operands for shifting or rotation before being passed to ALU.
+      \item Allows efficient bit manipulation and scaling code.
+      \item Eliminates virtually single shift instructions from ARM code.
+      \item A move instruction can still apply a shift to its operand.
+    \end{itemize}
+  \item \textbf{Uses von Neumann memory architecture} where instructions and data occupy single address space.
+    \begin{itemize}
+      \item Instruction fetching/execution must stop for instructions that access memory (\emph{Structural Hazard}).
+      \item Pipeline stalls during load and store operations.
+    \end{itemize}
+  \item \textbf{Multiple Load and Store Operation}
+    \begin{itemize}
+      \item Reduces the penalty of data accesses during a stall in the pipeline. Multiple load/store instructions can move any of the ARM registers to and from memory, and automatically update the memory address register.
+      \item Allows one instruction to transfer many words of data; it also reduces the amount of instructions needed to transfer data.
+      \item Makes ARM code smaller than other 32-bit CPUs.
+      \item Instructions specify an update of the base-address register with a new address after the transfer.
+    \end{itemize}
+  \item \textbf{All instructions are conditionally executed}
+    \begin{itemize}
+      \item Loads, stores, procedural calls and returns, and other operations can execute conditionally after some prior instruction to set condition code flags.
+      \item Any ALU instruction may set the flags.
+      \item Eliminates short-forward branches in ARM code.
+      \item Improves code density and flushing the pipeline for branches, and increases execution performance.
+    \end{itemize}
+\end{itemize}
+
+\notesection{Cortex-M4}
+Has a combination of efficient signal processing and lower power consumption.
+\sourcefigure{image-180721.png}{0.55\textheight}
+\sourcefigure{image-180604.png}{0.40\textheight}
+
+\notesection{Cortex M3}
+\sourcefigure{image-180750.png}{0.47\textheight}
+
+\begin{description}
+  \item[NVIC] Interrupt controller.
+  \item[Memory Protection Unit (MPU)] Invokes rules for accessing memory.
+  \item[SYSTICK] Countdown timer, used to generate interrupts.
+  \item[WIC] Unit for waking up the CPU.
+  \item[ROM] Small look-up table that stores configuration information.
+  \item[BusMatrix] Interconnect used to transfer data on different buses simultaneously.
+\end{description}
+The rest are \textbf{debugging} blocks: SW-DP (serial-wire debug port), ETM (Embedded Trace Macrocell), DWT (Data Watch-point and Trace), ITM (Instruction Trace Macrocell), etc.
+
+ARM uses the AMBA bus (an open-standard) on-chip interconnected spec. The M3 uses the following AMBA based buses:
+\begin{itemize}
+  \item Advanced peripheral bus: low bandwidth, used for processor to peripheral transactions.
+  \item ARM High-Performance Bus: high bandwidth/data-width transfers for higher performance, uses bursts.
+\end{itemize}
+
+Uses Harvard architecture: dedicated instruction/data buses.
+
+\emph{It was developed specifically with MCU applications in mind.}
+\begin{itemize}
+  \item Implements Thumb-2 instruction subset.
+  \item A hardware sign extender converts 8--16 bit operands to 32 bit.
+  \item L/S architecture.
+  \item Barrel Shifter allows operand $R_M$ to be shifted first, then ALU can perform another operation.
+  \item MAC: memory address calculator for different addressing of arrays and repetitive address calculations.
+\end{itemize}
+
+\subnotesection{Status Registers}
+\begin{notetable}{c c X}{\textbf{Bits} & \textbf{Name} & \textbf{Description}}
+  31 & N & Negative (bit 31 of result is 1) \\
+  30 & C & Unsigned Carry \\
+  29 & Z & Zero or equal \\
+  28 & V & Signed Overflow \\
+\end{notetable}
+
+\textbf{PSR: Program Status Register}
+
+It is divided into 3-bit fields:
+\begin{itemize}
+  \item Application Program Status Register (\textbf{ASPR}).
+  \item Interrupt Program Status Register (\textbf{IPSR}).
+  \item Execution Program Status Register (\textbf{EPSR}).
+\end{itemize}
+The ISPR holds the exception number for exception processing.
+
+\textbf{ESPR has the following useful bits:}
+\begin{itemize}
+  \item ICI/IT bits hold state information for IT block instructions (\emph{conditional execution}) or instructions that are suspended during interrupt processing.
+  \item Q-bit is the sticky saturation bit and supports SSAT and USAT.
+\end{itemize}
+
+\textbf{Saturation}
+
+Saturation arithmetic prevents integer overflow by clamping a result to the maximum or minimum representable value instead of allowing it to wrap around. For example: a 32-bit unsigned overflow saturates at: \texttt{0xFFFFFFF}. ARM's SSAT/USAT are useful in DSP applications. The \textbf{Q FLAG} indicates when saturation has occurred.
+
+\subnotesection{ARM Condition Code Field}
+\sourcefigure{image-182152.png}{0.42\textheight}
+
+\subnotesection{ARM Interrupt Processing}
+\begin{enumerate}
+  \item \textbf{Hardware interrupt occurs:} CPU finishes, suspends, abandons current instruction and initiates \emph{exception response sequence}.
+  \item \textbf{Exception Response Sequence:} CPU stacks the processor state and return address. Enables Handler mode, identifies the requesting device, and transfers control to the corresponding \textbf{ISR (Interrupt Service Routine)}.
+  \item \textbf{Exception Handler/ISR}
+    \begin{enumerate}
+      \item Preserves \texttt{R4--R11} as needed.
+      \item Transfers data between queue and I/O devices.
+      \item Restores \texttt{R4--R11} as needed.
+      \item Returns to interrupted code.
+    \end{enumerate}
+  \item \textbf{Exception Return:} Unstack and restore processor state and mode.
+  \item \textbf{Interrupt Complete:} Interrupted code continues where it left off as nothing happened.
+\end{enumerate}
+
+\subnotesection{Exception/Interrupt Handler}
+\textbf{Exception:} A condition that needs to halt the normal sequential flow of instruction execution.\par
+\textbf{Exception Categories:} Reset (Hardware), SVC Supervisor Call, Fault (Segmentation), and Interrupts (NMI).
+
+Each exception has:
+\begin{itemize}
+  \item Exception number.
+  \item Priority level.
+  \item Exception handler routine.
+  \item Entry in the vector table.
+\end{itemize}
+
+\textbf{Exception Response:}
+\begin{itemize}
+  \item Processor state (8 words) stored on stack: CSPR (Status), Return Address (PC), LR, R12, R3--R0.
+    \begin{itemize}
+      \item Processor state is auto-saved by Cortex M3/M4.
+    \end{itemize}
+  \item Processor switches from \emph{thread mode} to \emph{handler mode}.
+  \item Vector Table [Exception \#] stored on PC.
+\end{itemize}
+
+\textbf{Exception Handler}
+
+An exception handler (ISR) is a software routine that is executed when a specific exception condition occurs.
+
+\emph{Exception return} occurs when in Handler Mode and one of the following instructions is executed:
+\begin{itemize}
+  \item POP/LDM includes the PC, or
+  \item LDR with PC as destination, or
+  \item BX with any register as the source.
+\end{itemize}
+\sourcefigure{image-182844.png}{0.38\textheight}
+
+\subnotesection{Interrupt Latency}
+\sourcefigure{image-183308.png}{0.58\textheight}
+
+\textbf{Interrupt Latency} is the time it takes from the interrupt request to the corresponding interrupt handler begins to execute.
+\begin{enumerate}
+  \item \textbf{Suspend or Abandon Instruction Execution:} No need to suspend single cycle instruction but multiple cycle ones.
+  \item \textbf{Late arrival processing:} CPU begins an interrupt response sequence and another high-priority interrupt arrives during the stacking operation.
+  \item \textbf{Tail Chaining:} When two ISRs execute back-to-back (\emph{of the same level}), the state information is popped off the stack at the end of the 1st interrupt only to be pushed back at the beginning of the second interrupt. M3 eliminates this pop-push sequence with \textbf{tail-chaining}, and reduces the ISR transition time from \emph{24 to 6 clock cycles}.
+\end{enumerate}
+\sourcefigure{image-183304.png}{0.47\textheight}
+
+\subnotesection{NVIC (Nested Vectored Interrupt Controller)}
+Mapped to addresses: $E000E100 - E000ECFF_{16}$.
+
+Provides ability to:
+\begin{itemize}
+  \item Individually enable/disable interrupts from specific devices.
+  \item Establishes relative priorities among the various interrupts.
+\end{itemize}
+
+\end{document}

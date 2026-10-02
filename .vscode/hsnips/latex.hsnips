@@ -38,3 +38,10 @@ snippet ;keq "Key equation" bA
 \keyequation{$1}{$2}
 $0
 endsnippet
+
+snippet ;tbl "Notes table" bA
+\begin{notetable}{$1}{$2}
+    $3 \\
+\end{notetable}
+$0
+endsnippet
