@@ -1,3 +1,13 @@
 {
-    "hsnips.hsnipsPath": "${workspaceFolder}/.vscode/hsnips"
+    "hsnips.hsnipsPath": "${workspaceFolder}/.vscode/hsnips",
+    "latex-workshop.formatting.latex": "latexindent",
+    "[latex]": {
+        "editor.defaultFormatter": "James-Yu.latex-workshop",
+        "editor.quickSuggestions": {
+            "other": "on",
+            "comments": "off",
+            "strings": "on"
+        },
+        "editor.suggest.snippetsPreventQuickSuggestions": false
+    }
 }
