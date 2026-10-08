@@ -1,28 +1,1348 @@
+# LaTeX Suite-style shortcuts for VS Code HyperSnips.
+# Shortcut reference and upstream attribution: README.md in this directory.
+# All placeholders use bare $1, $2, ... because HyperSnips 0.2.9 does not
+# track default-valued placeholders reliably. Escape leaves a snippet.
 global
-function math(context) {
-    return context.scopes.some(scope => scope.startsWith("meta.math"));
+const vscode = require("vscode");
+let cachedState;
+const mathEnvironments = new Set([
+    "math", "displaymath", "equation", "eqnarray", "align", "alignat",
+    "flalign", "gather", "multline", "aligned", "alignedat", "gathered",
+    "split", "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix",
+    "Vmatrix", "smallmatrix", "cases", "array", "IEEEeqnarray", "notederivation"
+]);
+const codeEnvironments = new Set(["verbatim", "Verbatim", "lstlisting", "minted", "notecode"]);
+const textCommands = new Set([
+    "text", "textrm", "textsf", "texttt", "textnormal", "textbf", "textit",
+    "mbox", "hbox", "operatorname", "mathrm", "label", "ref", "eqref",
+    "cite", "url", "path", "tag"
+]);
+
+// TextMate does not know that keyequation's second argument and a
+// notederivation's body contain math. Track those alongside ordinary TeX
+// delimiters, nested groups, text arguments, comments, and verbatim regions.
+function scanLatex(before) {
+    const frames = [{ kind: "root", mode: "text" }];
+    let pending = [];
+    const current = () => frames[frames.length - 1];
+    const close = (kind, name) => {
+        for (let j = frames.length - 1; j > 0; j--) {
+            if (frames[j].kind === kind && frames[j].name === name) {
+                frames.length = j;
+                break;
+            }
+        }
+    };
+    for (let i = 0; i < before.length;) {
+        if (current().mode === "code") {
+            const end = "\\end{" + current().name + "}";
+            const next = before.indexOf(end, i);
+            if (next === -1) return { mode: "code", command: false };
+            i = next + end.length;
+            frames.pop();
+            continue;
+        }
+        const ch = before[i];
+        if (ch === "%") {
+            const next = before.indexOf("\n", i);
+            if (next === -1) return { mode: "comment", command: false };
+            i = next + 1;
+            continue;
+        }
+        if (ch === "\\") {
+            const tail = before.slice(i);
+            const environment = /^\\(begin|end)\s*\{([^}]+)\}/.exec(tail);
+            if (environment) {
+                const name = environment[2];
+                const base = name.replace(/\*$/, "");
+                pending = [];
+                if (environment[1] === "end") {
+                    close("environment", name);
+                } else {
+                    const mode = codeEnvironments.has(base) ? "code"
+                        : mathEnvironments.has(base) ? "math" : current().mode;
+                    frames.push({ kind: "environment", name, mode });
+                    if (base === "notederivation") pending = ["text"];
+                }
+                i += environment[0].length;
+                continue;
+            }
+            const verb = /^\\verb\*?([^A-Za-z\s])/.exec(tail);
+            if (verb) {
+                const next = before.indexOf(verb[1], i + verb[0].length);
+                if (next === -1) return { mode: "code", command: false };
+                i = next + 1;
+                continue;
+            }
+            const symbol = before[i + 1];
+            if (symbol === "(" || symbol === "[") {
+                frames.push({ kind: "delimiter", name: symbol, mode: "math" });
+                pending = [];
+                i += 2;
+                continue;
+            }
+            if (symbol === ")" || symbol === "]") {
+                close("delimiter", symbol === ")" ? "(" : "[");
+                pending = [];
+                i += 2;
+                continue;
+            }
+            const command = /^\\([A-Za-z@]+)\*?/.exec(tail);
+            if (command) {
+                const name = command[1];
+                pending = name === "keyequation" ? ["text", "math"]
+                    : name === "ensuremath" ? ["math"]
+                    : textCommands.has(name) ? ["text"] : [];
+                i += command[0].length;
+                continue;
+            }
+            // Escaped dollars, braces, percent signs, and row breaks are literal.
+            i += 2;
+            continue;
+        }
+        if (ch === "$") {
+            const name = before[i + 1] === "$" ? "$$" : "$";
+            if (current().kind === "delimiter" && current().name === name) {
+                frames.pop();
+            } else {
+                frames.push({ kind: "delimiter", name, mode: "math" });
+            }
+            pending = [];
+            i += name.length;
+            continue;
+        }
+        if (ch === "{") {
+            frames.push({ kind: "group", mode: pending.length ? pending[0] : current().mode,
+                after: pending.slice(1) });
+            pending = [];
+        } else if (ch === "}") {
+            if (current().kind === "group") pending = frames.pop().after;
+            else pending = [];
+        } else if (!/\s/.test(ch)) {
+            pending = [];
+        }
+        i++;
+    }
+    return { mode: current().mode, command: /\\[A-Za-z@]*$/.test(before) };
 }
+
+function state(context) {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.languageId !== "latex") {
+        const blocked = context.scopes.some(s => /comment|verbatim|listing/.test(s));
+        return { mode: blocked ? "code" : context.scopes.some(s => s.startsWith("meta.math")) ? "math" : "text", command: false };
+    }
+    const document = editor.document;
+    const position = editor.selection.active;
+    const offset = document.offsetAt(position);
+    if (!cachedState || cachedState.document !== document || cachedState.version !== document.version || cachedState.offset !== offset) {
+        const before = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
+        cachedState = { document, version: document.version, offset, value: scanLatex(before) };
+    }
+    return cachedState.value;
+}
+function math(context) { return state(context).mode === "math"; }
+function mathShortcut(context) { const s = state(context); return s.mode === "math" && !s.command; }
+function text(context) { const s = state(context); return s.mode === "text" && !s.command; }
+function editable(context) { return !["code", "comment"].includes(state(context).mode); }
+// VS Code consumes \\ and \} in snippet text. Preserve literal TeX data
+// captured from the document or generated as matrix row breaks.
+function snippetText(value) { return value.replace(/\\(?=[\\}])/g, "\\\\"); }
 endglobal
 
-context math(context)
-snippet `(?<![A-Za-z0-9_\\^])([A-Za-z0-9]+)/([A-Za-z0-9])` "Fraction from a/b" A
-\frac{``rv = m[1]``}{``rv = m[2]``$1}$0
+# Enter math from text. Tab advances placeholders; Shift+Tab goes back.
+
+context text(context)
+snippet `(?<![A-Za-z])mk` "Inline math" A
+\($1\)$0
 endsnippet
 
-context math(context)
-snippet `(?<![A-Za-z\\])sqrt` "Square root" A
+context text(context)
+snippet `(?<![A-Za-z])dm` "Display math" A
+\[
+    $1
+\]
+$0
+endsnippet
+
+priority -50
+context editable(context)
+snippet `(?<!\\)\(` "Paired ()" A
+($1)$0
+endsnippet
+
+priority -50
+context editable(context)
+snippet `(?<!\\)\[` "Paired []" A
+[$1]$0
+endsnippet
+
+priority -50
+context editable(context)
+snippet `(?<!\\)\{` "Paired {}" A
+{$1}$0
+endsnippet
+
+priority -50
+context text(context)
+snippet `(?<!\\)"` "Paired text quotes" A
+"$1"$0
+endsnippet
+
+context text(context)
+snippet beg "Environment (choose its name)" w
+\begin{$1}
+    $2
+\end{``rv = t[0]``}
+$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])beg` "Math environment (choose its name)" A
+\begin{$1}
+    $2
+\end{``rv = t[0]``}$0
+endsnippet
+
+# Greek letters: the same @ and : shortcuts as LaTeX Suite.
+
+context mathShortcut(context)
+snippet `@a` "alpha" A
+\alpha $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@b` "beta" A
+\beta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@g` "gamma" A
+\gamma $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@G` "Gamma" A
+\Gamma $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@d` "delta" A
+\delta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@D` "Delta" A
+\Delta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@e` "epsilon" A
+\epsilon $0
+endsnippet
+
+context mathShortcut(context)
+snippet `:e` "varepsilon" A
+\varepsilon $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@z` "zeta" A
+\zeta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@t` "theta" A
+\theta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@T` "Theta" A
+\Theta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `:t` "vartheta" A
+\vartheta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@i` "iota" A
+\iota $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@k` "kappa" A
+\kappa $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@l` "lambda" A
+\lambda $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@L` "Lambda" A
+\Lambda $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@s` "sigma" A
+\sigma $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@S` "Sigma" A
+\Sigma $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@u` "upsilon" A
+\upsilon $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@U` "Upsilon" A
+\Upsilon $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@o` "omega" A
+\omega $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@O` "Omega" A
+\Omega $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@m` "mu" A
+\mu $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@n` "nu" A
+\nu $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@p` "pi" A
+\pi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@P` "Pi" A
+\Pi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@r` "rho" A
+\rho $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@f` "phi" A
+\phi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@F` "Phi" A
+\Phi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `:f` "varphi" A
+\varphi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@c` "chi" A
+\chi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@y` "psi" A
+\psi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@Y` "Psi" A
+\Psi $0
+endsnippet
+
+context mathShortcut(context)
+snippet `@h` "eta" A
+\eta $0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ome` "omega" A
+\omega $0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])Ome` "Omega" A
+\Omega $0
+endsnippet
+
+# Powers, roots, text, and fonts. Use sq for roots (as in LaTeX Suite).
+
+priority 10
+context mathShortcut(context)
+snippet `sr` "Square" A
+^{2}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `cb` "Cube" A
+^{3}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `rd` "Power" A
+^{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `_` "Subscript" A
+_{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `\^` "Superscript" A
+^{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])sts` "Text subscript" A
+_{\text{$1}}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])sq` "Square root" A
 \sqrt{$1}$0
 endsnippet
 
-context math(context)
-snippet `(?<![A-Za-z\\])frac` "Fraction" A
+priority 100
+context mathShortcut(context)
+snippet `//` "Fraction" A
 \frac{$1}{$2}$0
 endsnippet
 
-snippet ;sum "Sum over all integers (any context)" A
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])frac` "Fraction alias" A
+\frac{$1}{$2}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ee` "Exponential" A
+e^{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `invs` "Inverse" A
+^{-1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `conj` "Conjugate" A
+^{*}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])text` "Text in math" A
+\text{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `"` "Text in math" A
+\text{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])bf` "Bold math" A
+\mathbf{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])rm` "Upright math" A
+\mathrm{$1}$0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])Re` "Real part" A
+\mathrm{Re} $0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])Im` "Imaginary part" A
+\mathrm{Im} $0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])trace` "Trace" A
+\operatorname{Tr} $0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])pmod` "Modulo" A
+\pmod{$1}$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(\d+)rt` "Nth root" A
+\sqrt[``rv = m[1]``]{$1}$0
+endsnippet
+
+# Automatic fractions for atoms, scripts, function calls, and grouped sums.
+
+priority 80
+context mathShortcut(context)
+snippet `(?<![A-Za-z0-9_\\])((?:(?:\\[A-Za-z]+(?: ?\{(?:[^{}\n]|\{(?:[^{}\n]|\{(?:[^{}\n]|\{[^{}\n]*\})*\})*\})*\})*|[A-Za-z0-9]+)(?: ?[_^](?:\{(?:[^{}\n]|\{(?:[^{}\n]|\{(?:[^{}\n]|\{[^{}\n]*\})*\})*\})*\}|[A-Za-z0-9])| ?\((?:[^()\n]|\((?:[^()\n]|\((?:[^()\n]|\([^()\n]*\))*\))*\))*\))*|\((?:[^()\n]|\((?:[^()\n]|\((?:[^()\n]|\([^()\n]*\))*\))*\))*\)))/` "Auto fraction: numerator /" A
+\frac{``rv = snippetText(m[1].startsWith('(') ? m[1].slice(1, -1) : m[1])``}{$1}$0
+endsnippet
+
+# Automatic variable subscripts, including Greek letters and multiple digits.
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])(alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)` "Named Greek letter" A
+\``rv = m[1]`` $0
+endsnippet
+
+priority -10
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z]+)(\d)` "Variable digit subscript" A
+``rv = m[1]``_{``rv = m[2]``}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?(\d)` "Greek digit subscript" A
+``rv = m[1]``_{``rv = m[2]``}$0
+endsnippet
+
+priority 25
+context mathShortcut(context)
+snippet `((?:\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)|[A-Za-z]+))_\{(\d+)\}(\d)` "Extend numeric subscript" A
+``rv = m[1]``_{``rv = m[2] + m[3]``}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])xnn` "Indexed x" A
+x_{n}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])xii` "Indexed x" A
+x_{i}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])xjj` "Indexed x" A
+x_{j}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ynn` "Indexed y" A
+y_{n}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])yii` "Indexed y" A
+y_{i}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])yjj` "Indexed y" A
+y_{j}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])xp1` "Next sample" A
+x_{n+1}$0
+endsnippet
+
+# Accents: xhat/xbar/xvec wrap the preceding variable.
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])hat` "Accent previous variable: hat" A
+\hat{``rv = m[1]``}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?hat` "Accent Greek letter: hat" A
+\hat{``rv = m[1]``}$0
+endsnippet
+
+priority 5
+context mathShortcut(context)
+snippet `(?<![A-Za-z])hat` "hat" A
+\hat{$1}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])bar` "Accent previous variable: bar" A
+\bar{``rv = m[1]``}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?bar` "Accent Greek letter: bar" A
+\bar{``rv = m[1]``}$0
+endsnippet
+
+priority 5
+context mathShortcut(context)
+snippet `(?<![A-Za-z])bar` "bar" A
+\bar{$1}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])dot` "Accent previous variable: dot" A
+\dot{``rv = m[1]``}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?dot` "Accent Greek letter: dot" A
+\dot{``rv = m[1]``}$0
+endsnippet
+
+priority 5
+context mathShortcut(context)
+snippet `(?<![A-Za-z])dot` "dot" A
+\dot{$1}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])ddot` "Accent previous variable: ddot" A
+\ddot{``rv = m[1]``}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?ddot` "Accent Greek letter: ddot" A
+\ddot{``rv = m[1]``}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ddot` "ddot" A
+\ddot{$1}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])tilde` "Accent previous variable: tilde" A
+\tilde{``rv = m[1]``}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?tilde` "Accent Greek letter: tilde" A
+\tilde{``rv = m[1]``}$0
+endsnippet
+
+priority 5
+context mathShortcut(context)
+snippet `(?<![A-Za-z])tilde` "tilde" A
+\tilde{$1}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])und` "Accent previous variable: und" A
+\underline{``rv = m[1]``}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?und` "Accent Greek letter: und" A
+\underline{``rv = m[1]``}$0
+endsnippet
+
+priority 5
+context mathShortcut(context)
+snippet `(?<![A-Za-z])und` "underline" A
+\underline{$1}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])vec` "Accent previous variable: vec" A
+\vec{``rv = m[1]``}$0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(\\(?:alpha|beta|gamma|Gamma|delta|Delta|epsilon|varepsilon|zeta|eta|theta|Theta|vartheta|iota|kappa|lambda|Lambda|mu|nu|xi|Xi|pi|Pi|rho|sigma|Sigma|tau|upsilon|Upsilon|phi|Phi|varphi|chi|psi|Psi|omega|Omega)) ?vec` "Accent Greek letter: vec" A
+\vec{``rv = m[1]``}$0
+endsnippet
+
+priority 5
+context mathShortcut(context)
+snippet `(?<![A-Za-z])vec` "vec" A
+\vec{$1}$0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])([A-Za-z])(?:,\.|\.,)` "Bold previous variable" A
+\mathbf{``rv = m[1]``}$0
+endsnippet
+
+# Operators, relations, arrows, and sets. A trailing space separates commands.
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ooo` "infty" A
+\infty $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])sum` "sum" A
+\sum $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])prod` "prod" A
+\prod $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `\+\-` "pm" A
+\pm $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `\-\+` "mp" A
+\mp $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `\.\.\.` "dots" A
+\dots $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])nabl` "nabla" A
+\nabla $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])xx` "times" A
+\times $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `\*\*` "cdot" A
+\cdot $0
+endsnippet
+
+priority 50
+context mathShortcut(context)
+snippet `(?<![A-Za-z])cdot` "cdot" A
+\cdot $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])para` "parallel" A
+\parallel $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `===` "equiv" A
+\equiv $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `!=` "neq" A
+\neq $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `>=` "geq" A
+\geq $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `<=` "leq" A
+\leq $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `>>` "gg" A
+\gg $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `<<` "ll" A
+\ll $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])simm` "sim" A
+\sim $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])sim=` "simeq" A
+\simeq $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])prop` "propto" A
+\propto $0
+endsnippet
+
+priority 50
+context mathShortcut(context)
+snippet `<\->` "leftrightarrow" A
+\leftrightarrow $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `\->` "to" A
+\to $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `!>` "mapsto" A
+\mapsto $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `=>` "implies" A
+\implies $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `=<` "impliedby" A
+\impliedby $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])and` "cap" A
+\cap $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])orr` "cup" A
+\cup $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])inn` "in" A
+\in $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])notin` "notin" A
+\notin $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])sub=` "subseteq" A
+\subseteq $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])sup=` "supseteq" A
+\supseteq $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])eset` "emptyset" A
+\emptyset $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])o\+` "oplus" A
+\oplus $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ox` "otimes" A
+\otimes $0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])deg` "Degrees" A
+^{\circ}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])set` "Set" A
+\lbrace $1 \rbrace$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])LL` "Number space: LL" A
+\mathcal{L}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])HH` "Number space: HH" A
+\mathcal{H}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])CC` "Number space: CC" A
+\mathbb{C}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])RR` "Number space: RR" A
+\mathbb{R}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ZZ` "Number space: ZZ" A
+\mathbb{Z}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])NN` "Number space: NN" A
+\mathbb{N}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])QQ` "Number space: QQ" A
+\mathbb{Q}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])exists` "Exists" A
+\exists $0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])nexists` "Does not exist" A
+\nexists $0
+endsnippet
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])forall` "For all" A
+\forall $0
+endsnippet
+
+priority 20
+context mathShortcut(context)
+snippet `(?<![A-Za-z\\])(arcsin|arccos|arctan|sinh|cosh|tanh|sin|cos|tan|csc|sec|cot|exp|log|ln|det)` "Named mathematical operator" A
+\``rv = m[1]`` $0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])arccsc` "arccsc" A
+\operatorname{arccsc} $0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])arcsec` "arcsec" A
+\operatorname{arcsec} $0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])arccot` "arccot" A
+\operatorname{arccot} $0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])sinc` "sinc" A
+\operatorname{sinc} $0
+endsnippet
+
+priority 45
+context mathShortcut(context)
+snippet `\\(sin|cos|tan) h` "Hyperbolic function" A
+\``rv = m[1]``h $0
+endsnippet
+
+priority 45
+context mathShortcut(context)
+snippet `\\sin c` "Sinc function continuation" A
+\operatorname{sinc} $0
+endsnippet
+
+# Limits, derivatives, and integrals. par and explicit operators use Tab.
+
+context mathShortcut(context)
+snippet `(?<![A-Za-z])lim` "Limit" A
+\lim_{$1 \to $2} $0
+endsnippet
+
+context math(context)
+snippet \sum "sum limits (Tab)" i
+\sum_{$1=$2}^{$3} $0
+endsnippet
+
+context math(context)
+snippet \prod "prod limits (Tab)" i
+\prod_{$1=$2}^{$3} $0
+endsnippet
+
+context mathShortcut(context)
+snippet par "Partial derivative (Tab)" w
+\frac{\partial $1}{\partial $2}$0
+endsnippet
+
+priority 50
+context mathShortcut(context)
+snippet `par([0-9])` "Nth partial derivative" A
+\frac{\partial^{``rv = m[1]``} $1}{\partial $2^{``rv = m[1]``}}$0
+endsnippet
+
+priority 50
+context mathShortcut(context)
+snippet `(?<![A-Za-z])parn` "Nth partial derivative" A
+\frac{\partial^{$1} $2}{\partial $3^{``rv = t[0]``}}$0
+endsnippet
+
+context mathShortcut(context)
+snippet `pa([A-Za-z])([A-Za-z])` "Partial derivative variables (Tab)"
+\frac{\partial ``rv = m[1]``}{\partial ``rv = m[2]``}$0
+endsnippet
+
+priority 50
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ddt` "Time derivative" A
+\frac{d}{dt} $0
+endsnippet
+
+priority 10
+context mathShortcut(context)
+snippet `(?<![A-Za-z])int` "int" A
+\int $0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(?<![A-Za-z])oint` "oint" A
+\oint $0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(?<![A-Za-z])iint` "iint" A
+\iint $0
+endsnippet
+
+priority 35
+context mathShortcut(context)
+snippet `(?<![A-Za-z])iiint` "iiint" A
+\iiint $0
+endsnippet
+
+context math(context)
+snippet \int "Integral with differential (Tab)" i
+\int $1\,d$2$0
+endsnippet
+
+priority 45
+context mathShortcut(context)
+snippet `(?<![A-Za-z])dint` "Definite integral" A
+\int_{$1}^{$2} $3\,d$4$0
+endsnippet
+
+priority 45
+context mathShortcut(context)
+snippet `(?<![A-Za-z])oinf` "Integral on positive half-line" A
+\int_{0}^{\infty} $1\,d$2$0
+endsnippet
+
+priority 45
+context mathShortcut(context)
+snippet `(?<![A-Za-z])infi` "Integral on real line" A
+\int_{-\infty}^{\infty} $1\,d$2$0
+endsnippet
+
+# Matrices and cases belong inside existing math; align inserts aligned.
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])pmat` "pmatrix" A
+\begin{pmatrix}
+    $1
+\end{pmatrix}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])bmat` "bmatrix" A
+\begin{bmatrix}
+    $1
+\end{bmatrix}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])Bmat` "Bmatrix" A
+\begin{Bmatrix}
+    $1
+\end{Bmatrix}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])vmat` "vmatrix" A
+\begin{vmatrix}
+    $1
+\end{vmatrix}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])Vmat` "Vmatrix" A
+\begin{Vmatrix}
+    $1
+\end{Vmatrix}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])matrix` "matrix" A
+\begin{matrix}
+    $1
+\end{matrix}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])align` "aligned" A
+\begin{aligned}
+    $1
+\end{aligned}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])cases` "Cases" A
+\begin{cases}
+    $1
+\end{cases}$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])array` "Array with column specification" A
+\begin{array}{$1}
+    $2
+\end{array}$0
+endsnippet
+
+priority 50
+context mathShortcut(context)
+snippet `iden([1-9])` "Identity matrix" A
+``const n = Number(m[1]); rv = snippetText('\\begin{pmatrix}\n' + Array.from({length:n}, (_,r) => Array.from({length:n}, (_,c) => r === c ? '1' : '0').join(' & ')).join(' \\\\\n') + '\n\\end{pmatrix}');``$0
+endsnippet
+
+# Delimiters; plain brackets are paired by the snippets near the top.
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])avg` "Delimited expression: avg" A
+\langle $1 \rangle$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])norm` "Delimited expression: norm" A
+\lvert $1 \rvert$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])Norm` "Delimited expression: Norm" A
+\lVert $1 \rVert$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ceil` "Delimited expression: ceil" A
+\lceil $1 \rceil$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])floor` "Delimited expression: floor" A
+\lfloor $1 \rfloor$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])mod` "Delimited expression: mod" A
+| $1 |$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])lr\(` "Delimited expression: lr(" A
+\left( $1 \right)$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])lr\[` "Delimited expression: lr[" A
+\left[ $1 \right]$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])lr\{` "Delimited expression: lr{" A
+\left\lbrace $1 \right\rbrace$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])lr\|` "Delimited expression: lr|" A
+\left| $1 \right|$0
+endsnippet
+
+priority 30
+context mathShortcut(context)
+snippet `(?<![A-Za-z])lra` "Delimited expression: lra" A
+\left\langle $1 \right\rangle$0
+endsnippet
+
+# Physics uses standard LaTeX delimiters instead of requiring physics.sty.
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])kbt` "kbt" A
+k_{B}T$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])msun` "msun" A
+M_{\odot}$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `dag` "dag" A
+^{\dagger}$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])bra` "bra" A
+\langle $1|$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])ket` "ket" A
+|$1\rangle$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])brk` "brk" A
+\langle $1|$2\rangle$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])outer` "outer" A
+|$1\rangle\langle ``rv = t[0]``|$0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])he4` "he4" A
+{}^{4}_{2}\mathrm{He} $0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])he3` "he3" A
+{}^{3}_{2}\mathrm{He} $0
+endsnippet
+
+priority 40
+context mathShortcut(context)
+snippet `(?<![A-Za-z])iso` "iso" A
+{}^{$1}_{$2}\mathrm{$3}$0
+endsnippet
+
+# Existing lecture snippets plus topic/subtopic and derivation shortcuts.
+
+context editable(context)
+snippet ;sum "Sum over all integers (any editable context)" A
 \sum_{n=-\infty}^{\infty}$0
 endsnippet
 
+context text(context)
 snippet ;fig "Figure with image" bA
 \begin{figure}[htbp]
     \centering
@@ -33,19 +1353,42 @@ snippet ;fig "Figure with image" bA
 $0
 endsnippet
 
+context text(context)
 snippet ;def "Note definition" bA
 \notedefinition{$1}{$2}
 $0
 endsnippet
 
+context text(context)
 snippet ;keq "Key equation" bA
 \keyequation{$1}{$2}
 $0
 endsnippet
 
+context text(context)
 snippet ;tbl "Notes table" bA
 \begin{notetable}{$1}{$2}
-    $3 \\
+    $3 \tabularnewline
 \end{notetable}
+$0
+endsnippet
+
+context text(context)
+snippet ;sec "Topic heading" bA
+\notesection{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;sub "Subtopic heading" bA
+\subnotesection{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;der "Note derivation" bA
+\begin{notederivation}{$1}
+    & $2 && \qquad \text{$3}
+\end{notederivation}
 $0
 endsnippet

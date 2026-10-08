@@ -1,6 +1,7 @@
 \documentclass[a4paper,11pt]{article}
 \usepackage{lecturenotes}
 \usepackage{caption}
+\usepackage{placeins}
 \lectureheader{ELE745}{2}
 \begin{document}
 \notesection{Formatting and Digital Coding of Waveforms}
@@ -15,14 +16,14 @@ In practice, sampling multiplies $x(t)$ by the impulse train $x_\delta(t)$, whos
     \setlength{\jot}{2pt}%
     & x_\delta(t) = \sum_{n=-\infty}^{\infty} \delta(t-nT_s) && \qquad \text{Definition of Pulse Train} \\
     & D_{n, \delta} = \frac{1}{T_s}\int_{-T_s/2}^{T_s/2} x_p(t)e^{-jn2\pi f_s t} dt = 1/T_s && \qquad \text{Fourier Series of Pulse Train} \\
-    & X_{\delta}(f) = \frac{1}{T_s}\sum_{n=-\infty}^{\infty} \delta(f-nf_s) && \qquad \text{Fourier Transform of Pulse Train} \\ 
+    & X_{\delta}(f) = \frac{1}{T_s}\sum_{n=-\infty}^{\infty} \delta(f-nf_s) && \qquad \text{Fourier Transform of Pulse Train} \\
     & x_s = x(t) \cdot x_\delta(t) = \sum_{n=-\infty}^{\infty} x(t) \cdot \delta(t-nT_s) = \sum_{n=-\infty}^\infty x(nT_s)\delta(t-nT_s) && \qquad \text{Time Domain Representation} \\
     & X_s(f) = X(f) * X_\delta(f) = \frac{1}{T_s}\sum_{n=-\infty}^{\infty}X(f-nf_s) && \qquad \text{Frequency Domain Representation}
 \end{notederivation}
 
 \keyequation{Sampled Signal Representations}{
     \begin{aligned}
-        x_s(t) &= \sum_{n=-\infty}^\infty x(nT_s)\delta(t-nT_s), \quad X_s(f) &= \frac{1}{T_s}\sum_{n=-\infty}^{\infty}X(f-nf_s)
+        x_s(t) & = \sum_{n=-\infty}^\infty x(nT_s)\delta(t-nT_s), \quad X_s(f) & = \frac{1}{T_s}\sum_{n=-\infty}^{\infty}X(f-nf_s)
     \end{aligned}
 }
 \begin{itemize}
@@ -33,50 +34,50 @@ In practice, sampling multiplies $x(t)$ by the impulse train $x_\delta(t)$, whos
 \end{itemize}
 \enlargethispage{2\baselineskip}
 \begingroup
-    \captionsetup{font=footnotesize,skip=3pt}
-    \noindent
-    \begin{minipage}[t]{0.46\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{figures/sampling_time_frequency_diagram.png}
-        \captionof{figure}{Sampling in the time and frequency domains.}
-        \label{fig:sampling-time-frequency}
-    \end{minipage}\hfill
-    \begin{minipage}[t]{0.46\linewidth}
-        \centering
-        \includegraphics[width=\linewidth]{figures/sampling_regimes_frequency_spectra.png}
-        \captionof{figure}{Spectral replicas for oversampling, Nyquist sampling, and undersampling.}
-        \label{fig:sampling-regimes}
-    \end{minipage}
+\captionsetup{font=footnotesize,skip=3pt}
+\noindent
+\begin{minipage}[t]{0.46\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/sampling_time_frequency_diagram.png}
+    \captionof{figure}{Sampling in the time and frequency domains.}
+    \label{fig:sampling-time-frequency}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.46\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/sampling_regimes_frequency_spectra.png}
+    \captionof{figure}{Spectral replicas for oversampling, Nyquist sampling, and undersampling.}
+    \label{fig:sampling-regimes}
+\end{minipage}
 \endgroup
 
 \subnotesection{Ideal Signal Reconstruction}
 Recall the spectrum of the sampled signal, we can then recover the signal as:
 $$
-X(f) = \frac{1}{f_s}X_s(f)\cdot \operatorname{rect}\!\left(\frac{f}{2B}\right)
+    X(f) = \frac{1}{f_s}X_s(f)\cdot \operatorname{rect}\!\left(\frac{f}{2B}\right)
 $$
 
 Where: $\operatorname{rect}\!\left(\frac{f}{2B}\right)=\begin{cases}
-    1 & -B\leq f \leq B \\
-    0 & \text{o.w}
-\end{cases}
+        1 & -B\leq f \leq B \\
+        0 & \text{o.w}
+    \end{cases}
 $
 
 \begin{notederivation}{Time-Domain Representation of Ideal Signal Recovery}
     & x(t) = \mathcal{F}^{-1}[X(f)]
-        = \frac{1}{f_s}\mathcal{F}^{-1}\!\left[X_s(f)\cdot\operatorname{rect}\!\left(\frac{f}{2B}\right)\right]
-        && \qquad \text{Ideal low-pass filtering} \\
+    = \frac{1}{f_s}\mathcal{F}^{-1}\!\left[X_s(f)\cdot\operatorname{rect}\!\left(\frac{f}{2B}\right)\right]
+    && \qquad \text{Ideal low-pass filtering} \\
     & \phantom{x(t)} = \frac{1}{f_s}\mathcal{F}^{-1}[X_s(f)]
-        * \mathcal{F}^{-1}\!\left[\operatorname{rect}\!\left(\frac{f}{2B}\right)\right]
-        && \qquad \text{Convolution theorem} \\
+    * \mathcal{F}^{-1}\!\left[\operatorname{rect}\!\left(\frac{f}{2B}\right)\right]
+    && \qquad \text{Convolution theorem} \\
     & \phantom{x(t)} = \frac{1}{f_s}x_s(t)*\bigl(2B\,\operatorname{sinc}(2\pi Bt)\bigr)
-        = \frac{2B}{f_s}x_s(t)*\operatorname{sinc}(2\pi Bt)
-        && \qquad \text{Inverse transform pair} \\
+    = \frac{2B}{f_s}x_s(t)*\operatorname{sinc}(2\pi Bt)
+    && \qquad \text{Inverse transform pair} \\
     & \phantom{x(t)} = \frac{2B}{f_s}\left[\sum_{n=-\infty}^{\infty}x(nT_s)\delta(t-nT_s)\right]
-        * \operatorname{sinc}(2\pi Bt)
-        && \qquad \text{Substitute sampled signal} \\
+    * \operatorname{sinc}(2\pi Bt)
+    && \qquad \text{Substitute sampled signal} \\
     & \phantom{x(t)} = \frac{2B}{f_s}\sum_{n=-\infty}^{\infty}x(nT_s)\,
-        \operatorname{sinc}\!\bigl(2\pi B(t-nT_s)\bigr)
-        && \qquad \text{Sinc interpolation}
+    \operatorname{sinc}\!\bigl(2\pi B(t-nT_s)\bigr)
+    && \qquad \text{Sinc interpolation}
 \end{notederivation}
 If $f_s = 2B$ then:
 \keyequation{Interpolation Formula for Signal Reconstruction}{x(t) = \sum_{n=-\infty}^{\infty}x(nT_s)\cdot \operatorname{sinc}\Big[ 2\pi B (t-nT_s)\Big]}
@@ -85,8 +86,8 @@ If $f_s = 2B$ then:
 In reality however, the actual sampling signal is defined as: $c(t) \frac{A_\tau}{T_s}\sum_{n=-\infty}^\infty \operatorname{sinc}(n\pi f_s \tau)e^{j2\pi n f_s t}$.
 \keyequation{Practical Sampling Sampled Signal Equation}{
     \begin{aligned}
-        x_s(t) &= \frac{A_\tau}{T_s} \cdot x(t) \sum_{n=-\infty}^{\infty} \operatorname{sinc}(n\pi f_s \tau)e^{j2\pi n f_s t} \\
-        X_s(f) &= \frac{A_\tau}{T_s} \sum_{n=-\infty}^{\infty} \operatorname{sinc}(n\pi f_s \tau) \cdot X(f-nf_s)
+        x_s(t) & = \frac{A_\tau}{T_s} \cdot x(t) \sum_{n=-\infty}^{\infty} \operatorname{sinc}(n\pi f_s \tau)e^{j2\pi n f_s t} \\
+        X_s(f) & = \frac{A_\tau}{T_s} \sum_{n=-\infty}^{\infty} \operatorname{sinc}(n\pi f_s \tau) \cdot X(f-nf_s)
     \end{aligned}
 }
 During natural sampling we observe that \textbf{A)} No distortion in recieving $x(t)$ if $f_s > 2B$ and \textbf{B)} if $A\tau = 1$, natural sampling is equivalent to ideal sampling when $n=0$
@@ -95,7 +96,7 @@ During natural sampling we observe that \textbf{A)} No distortion in recieving $
     \centering
     \includegraphics[width=0.8\linewidth]{figures/natural_and_ideal_sampling.png}
     \caption{Natural and Ideal Sampling}
-    \label{fig:}
+    \label{fig:natural-and-ideal-sampling}
 \end{figure}
 
 \notesection{Quantization}
@@ -105,19 +106,108 @@ Process in which the amplitude of the sampled signal (discrete-time) is limited 
 \keyequation{E as a Random Variable with Uniform Distribution}{
     e = x_q - x_s
 }[\begin{itemize}
-    \item Stepsize: $q = \frac{V_{pp}}{L}$
-    \item Quantization Levels: $L=2^N$
-    \item Quantization Bits: N
-    \item Range: $-\frac{q}{2}\geq e \geq \frac{q}{2}$
-\end{itemize}]
+        \item Stepsize: $q = \frac{V_{pp}}{L}$
+        \item Quantization Levels: $L=2^N$
+        \item Quantization Bits: N
+        \item Range: $-\frac{q}{2}\geq e \geq \frac{q}{2}$
+    \end{itemize}]
 
 \keyequation{Probability Density Function (PDF) of Quantization Error}{f(e) = \begin{cases}
-    \frac{1}{q} & -\frac{q}{2}\geq e \geq \frac{q}{2} \\
-    0 & \text{otherwise}
-\end{cases}}
+        \frac{1}{q} & -\frac{q}{2}\geq e \geq \frac{q}{2} \\
+        0           & \text{otherwise}
+    \end{cases}}
 
 \keyequation{Quantization Noise Power}{\sigma^2_q = E[e^2] = \frac{q^2}{12}}
 \keyequation{Signal Noise Power}{\operatorname{SNR} = \frac{P_{\text{signal}}}{\sigma^2}}
 \notesection{PCM Modulation}
+
+The best way to discretize the amplitude of a function, $a(n)$, is to quantize the amplitude to $L=2^N$ levels.
+\notedefinition{Determining Levels of a PCM Digitized Signal}{Given an amplitude A, the number of levels for a given number of bits, N, its
+    \begin{align}
+        L                            & = 2^N                        \\
+        \text{where} \qquad \log_2 L & = N\log_2 2 = N\ \text{bits}
+    \end{align}
+}
+
+\keyequation{PCM Word Size}{L = 2^N \qquad N = log_2(L)}
+
+To determine N, we need to look at the quantization distortion. Let the magnitude of quantization error be: $|e|$ and be specified as:
+\keyequation{Quantization Error}{|e| \leq pV_{pp}}[
+    \begin{align}
+        |e|_{\operatorname{max}}                 & = \frac{q}{2} = \frac{V_{PP}}{2L} \\
+        \text{Therefore} \quad \frac{V_{PP}}{2L} & \leq pV_{pp}
+    \end{align}
+]
+
+\keyequation{Determining N for PCM}{2^N = L \geq \frac{1}{2p} \qquad N \geq log\left(\frac{1}{2p} \right)}
+
+Increasing L lowers the error but increases N which also increases the data-rate which brings its own challenges
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\linewidth]{figures/pcm_sampling_quantization.png}
+    \caption{Example of PCM Sampling and Quantization Levels}
+    \label{fig:pcm-sampling-quantization}
+\end{figure}
+
+
+\FloatBarrier
+\notesection{Pulse Amplitude Modulation (PAM)}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\linewidth]{figures/pam_pulse_shaping.png}
+    \caption{PAM Pulse Shaping Block Diagram}
+    \label{fig:pam-pulse-shaping}
+\end{figure}
+
+Let $g_\delta (t) = \sum_{n=-\infty}^{\infty}g(nT_s) \cdot \delta(t-nT_s)$ be the sampled signal representation, then the PAM signal of this function is:
+\keyequation{PAM Signal}{
+    y(t) = g_\delta (t) * h(t) = \sum_{n=-\infty}^{\infty}g(nT_s) \cdot \delta(t-nT_s) * h(t) = \sum_{n=-\infty}^{\infty} g(nT_s) \cdot h(t-nT_s)
+}
+
+\begin{itemize}
+    \item Width of a PAM signal pulse (T) is less than or equal to $T_s$. The ratio between these two values: $\frac{T}{T_s}$ is called the duty cycle
+    \item Sampled values are amplitude continuous and therefore PAM is an analog signaling scheme
+    \item Information samples without quantization are modulated onto pulses, resulting in \textit{analog pulse modulation}
+\end{itemize}
+
+\notesection{PCM vs. PAM}
+\notedefinition{PCM Pros and Cons}{Uses 2-level, it is easy to dectect but needs more bandwidth}
+\notedefinition{PAM Pros and Cons}{Uses more amplitude levels, but is difficult to detect but saves bandwidth}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/pcm_vs_pam.png}
+    \caption{PCM vs PAM Visualization}
+    \label{fig:pcm-vs-pam}
+\end{figure}
+\FloatBarrier
+
+\notesection{Multiplexing}
+\notedefinition{Frequency Multiplexing (FDM)}{Seperates signals in the frequency domain (i.e. AM/FM radio) and each signal occupies its frequency slot all the time:
+    $$
+        \sum_n f_i \leq f_c
+    $$}
+
+\notedefinition{Time Division Multiplexing (TDM)}{The signal from different information sources are multiplexed in the time domain, and each signal occupies all of the channel during its time slot}
+
+The pulse duration of a individual input has to be shortened from \textcolor{red}{$T_s$} to \textbf{\textcolor{red}{$T_x = \frac{T_s}{N}$}} where $T_x$ seconds is allocated to an individual sample
+during \textit{one sample interval}. \textbf{TDM transmission requires a wider transmission channel bandwidth}
+
+\notebox{Example}{
+    10 voice signals each bandlimited to 3.2 kHz are sequentially sampled at 8 kHz and time multiplexed on one channel.
+
+    \tcbline
+
+    The sampling frequency is: $f_s = 8kHz \geq 2B \therefore T_s = \frac{1}{f_s} = 125 \mu s$. For TDM each signal can occupy: $T_s/N = 125/10 = 12.5 \mu  s$ \\
+    Bandwidth required is rougly 80 kHz. For a FDM system, the bandwidth would be 8kHz but would require 10 trancievers for 10 signals.
+}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/tdm_system_block_diagram.png}
+    \caption{TDM Block Diagram}
+    \label{fig:tdm-system-block-diagram}
+\end{figure}
+
 
 \end{document}

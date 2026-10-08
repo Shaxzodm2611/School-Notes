@@ -3,11 +3,14 @@
     "latex-workshop.formatting.latex": "latexindent",
     "[latex]": {
         "editor.defaultFormatter": "James-Yu.latex-workshop",
+        "editor.autoClosingBrackets": "never",
+        "editor.autoClosingQuotes": "never",
+        "editor.tabCompletion": "on",
         "editor.quickSuggestions": {
             "other": "on",
             "comments": "off",
             "strings": "on"
         },
-        "editor.suggest.snippetsPreventQuickSuggestions": false
+        "editor.suggest.snippetsPreventQuickSuggestions": true
     }
 }

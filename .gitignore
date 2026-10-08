@@ -11,6 +11,9 @@
 # Workspace-local VS Code LaTeX shortcuts
 !.vscode/*.json
 !.vscode/hsnips/*.hsnips
+!.vscode/hsnips/README.md
+!.vscode/hsnips/check-snippets.cjs
+!.vscode/hsnips/LICENSE.latex-suite.txt
 
 # Figure files (PDFs are intentionally excluded)
 !*.png
