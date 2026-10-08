@@ -19,6 +19,10 @@ snippet `(?<![A-Za-z\\])frac` "Fraction" A
 \frac{$1}{$2}$0
 endsnippet
 
+snippet ;sum "Sum over all integers (any context)" A
+\sum_{n=-\infty}^{\infty}$0
+endsnippet
+
 snippet ;fig "Figure with image" bA
 \begin{figure}[htbp]
     \centering
