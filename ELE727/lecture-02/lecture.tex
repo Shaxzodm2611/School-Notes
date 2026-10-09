@@ -2,6 +2,8 @@
 \usepackage{lecturenotes}
 \lectureheader{ELE727}{2}
 \begin{document}
+\tableofcontents
+\clearpage
 
 \notesection{Common-Source (CS) Amplifier with Resistive Load}
 \begin{notecircuit}[american, scale=0.7, transform shape]{Common-Source (CS) Amplifier with Resistive Load}
@@ -34,7 +36,7 @@ For a conducting transistor, define $V_{OV} = V_{\mathrm{in}} - V_{TH} > 0$.
 }[The triode and saturation expressions require $V_{\mathrm{in}} > V_{TH}$.
     These DC expressions neglect channel-length modulation.]
 
-\subnotesection{$V_{\mathrm{out}}$ vs. $V_{\mathrm{in}}$}
+\subnotesection{\texorpdfstring{$V_{\mathrm{out}}$ vs. $V_{\mathrm{in}}$}{V\_out vs. V\_in}}
 
 \begin{figure}[htbp]
     \centering
@@ -312,7 +314,7 @@ Increasing the gain of a multi-stage amplifier comes with less trade-offs and is
     \node[red, above] at (2.3,5) {$B$};
 \end{notecircuit}
 
-\subnotesection{Finding $G_M$ through small-signal analysis}
+\subnotesection{\texorpdfstring{Finding $G_M$ through small-signal analysis}{Finding G\_M through small-signal analysis}}
 For the short-circuit transconductance, set $v_B = v_{\mathrm{out}} = 0$ and define
 $i_{\mathrm{out}}$ as entering node B from the output short.
 \begin{notederivation}{Finding $G_M$}
@@ -335,7 +337,7 @@ $i_{\mathrm{out}}$ as entering node B from the output short.
 \end{notederivation}
 
 \Needspace{185mm}
-\subnotesection{Nortons to find $R_o$}
+\subnotesection{\texorpdfstring{Nortons to find $R_o$}{Nortons to find R\_o}}
 \assumption{\begin{itemize}
     \item $V_{in} = 0 \therefore g_{m1}V_{in} = 0$
     \item $V_b = 0$

@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{lecturenotes}[2026/09/23 v0.1.2 Lecture summary formatting]
+\ProvidesPackage{lecturenotes}[2026/10/08 v0.1.6 Lecture summary formatting]
 \RequirePackage[T1]{fontenc}
 \RequirePackage{lmodern}
 \RequirePackage[margin=22mm,includehead,headheight=24pt,headsep=8mm]{geometry}
@@ -15,10 +15,14 @@
 \RequirePackage{circuitikz}
 \RequirePackage{pgfplots}
 \RequirePackage{xparse}
+\RequirePackage{etoolbox}
 \RequirePackage{multicol}
 \RequirePackage{changepage}
 \RequirePackage{needspace}
 \RequirePackage{listings}
+% Load after the other packages so contents entries also become PDF bookmarks.
+\RequirePackage[hidelinks,unicode,linktoc=all,bookmarksopen=true,
+  bookmarksdepth=2,pdfpagemode=UseOutlines]{hyperref}
 \pgfplotsset{compat=1.18}
 
 \definecolor{NoteAccent}{HTML}{246A70}
@@ -38,15 +42,27 @@
   \fancyhead[L]{\fontsize{12}{14}\selectfont\sffamily\bfseries\color{NoteAccent}\textls[60]{#1}}%
   \fancyhead[R]{\fontsize{11}{13}\selectfont\sffamily\bfseries\color{NoteInk}Lecture #2}}
 
-% Optional topic dividers. New lectures still start without any sections.
+% Record two unnumbered heading levels in the contents and PDF outline.
+\setcounter{tocdepth}{2}
+% Keep contents entries compact without changing paragraph spacing in the notes.
+\AddToHook{cmd/tableofcontents/before}{\begingroup\setlength{\parskip}{0pt}}
+\AddToHook{cmd/tableofcontents/after}{\endgroup}
+\patchcmd{\l@section}{1.0em \@plus\p@}{3pt}{}{%
+  \PackageWarning{lecturenotes}{Unable to reduce contents entry spacing}}
 \NewDocumentCommand{\notesection}{m}{%
   \par\addvspace{15pt}\Needspace{5\baselineskip}%
+  % Anchor after Needspace so links land on the heading if it moves to a new page.
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}%
   {\fontsize{14}{17}\selectfont\sffamily\bfseries\color{NoteInk}#1\par}%
   \nobreak\vspace{3pt}%
   {\color{NoteAccent}\hrule width 18mm height 1.2pt}%
   \nobreak\vspace{7pt}\noindent\ignorespaces}
 \NewDocumentCommand{\subnotesection}{m}{%
   \par\addvspace{8pt}\Needspace{3\baselineskip}%
+  % Anchor after Needspace so links land on the heading if it moves to a new page.
+  \phantomsection
+  \addcontentsline{toc}{subsection}{#1}%
   {\fontsize{11}{14}\selectfont\sffamily\bfseries\color{NoteAccent}#1\par}%
   \nobreak\vspace{2pt}\noindent\ignorespaces}
 
@@ -60,6 +76,20 @@
     {\sffamily\bfseries\small\color{NoteAccent}#1}\par
     #2
   \end{tcolorbox}}
+\NewDocumentCommand{\notesummary}{m +m +m}{%
+  \begin{tcolorbox}[noteboxstyle,after skip=0pt]
+    {\sffamily\bfseries\small\color{NoteAccent}#1}\par
+    #2
+  \end{tcolorbox}%
+  \par\addvspace{10pt}%
+  \begingroup
+    \setlength{\parskip}{0pt}%
+    \setlength{\extrarowheight}{4pt}%
+    \noindent\begin{tabularx}{\linewidth}{@{}>{\normalfont\color{NoteMuted}\raggedright\arraybackslash}p{4em}@{\hspace{10pt}}>{\normalfont\color{NoteInk}\arraybackslash}X@{}}
+      #3
+    \end{tabularx}%
+  \endgroup\par\addvspace{7pt}%
+}
 \NewDocumentCommand{\keyequation}{m m o}{%
   \begin{tcolorbox}[noteblock]
     {\sffamily\bfseries\small\color{NoteAccent}#1}\par

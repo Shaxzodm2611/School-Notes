@@ -1,0 +1,339 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{lecturenotes}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,parsep=0pt,topsep=4pt}
+\lectureheader{COE718}{3}
+\newcommand{\sourcefigure}[2]{%
+  \par\smallskip\begin{center}
+  \includegraphics[width=\linewidth,height=#2,keepaspectratio]{figures/#1}
+  \end{center}\smallskip}
+% Show the graphical field above each table; the table is transcribed below.
+\newsavebox{\sourceimagebox}
+\newlength{\sourcebottom}
+\newcommand{\sourcefield}[2]{%
+  \sbox{\sourceimagebox}{\includegraphics{figures/#1}}%
+  \setlength{\sourcebottom}{#2\ht\sourceimagebox}%
+  \begin{center}\includegraphics[width=\linewidth,trim=0 {\sourcebottom} 0 0,clip]{figures/#1}\end{center}}
+\newcommand{\code}[1]{\texttt{#1}}
+\begin{document}
+\tableofcontents
+\clearpage
+
+\notesection{ARM Registers and Programming Model}
+There are 15 general-purpose registers.
+\begin{itemize}
+  \item \textbf{Thumb mode:} R0--R7, general-purpose.
+  \item \textbf{7 high registers:} R8--R12, only accessible with MOV, ADD, or CMP.
+  \item \textbf{Stack pointer:} R13.
+  \item \textbf{Link register:} R14.
+  \item \textbf{Program counter:} R15.
+\end{itemize}
+
+\subnotesection{Data-processing Instructions}
+\notebox{Of Note}{
+RSB, \emph{Reverse Subtract}, \code{RSB R3, R1, R2}: $\rightarrow R_2-R_1\implies R_3$.
+
+SNB, \code{SNB R3, R1, R2}: $\rightarrow R_1-R_2\implies R_3$.
+}
+\emph{Add info for `S'-suffix here.}
+
+\subnotesection{Loading Constants}
+\begin{description}
+  \item[\code{MOV, Rd, constant}] Works for 0--255 and $-255$--$-1$.
+  \item[\code{MVN, Rd, constant; rd < -constant}]
+  Effectively doubles the number of constants. The assembler converts MOV with a negative constant to MVN.
+  \item[\code{LDR}, \code{rd = constant}]
+  Assembler pseudo-op, not an instruction. Converts to MOV or MVN if possible; otherwise converts to \code{LDR r\_d, [PC, \#imm]}.
+\end{description}
+
+\textbf{LDRH (Load Half Word)}
+
+Loads a 16-bit memory half-word that is unmodified, and pads the remaining bits of the 32-bit register (B31--B16) with zeros.
+
+\textbf{LDRSH (Load Signed Halfword)}
+
+Interprets the 16 bits as signed (a two's-complement number), sign-extends it to 32 bits, and stores it into the register.
+
+\textbf{STRH (Store Half Word)}
+
+Stores the last 16 bits of a half-word into memory (i.e., \textbf{MSB 16 bits are NOT written into memory}).
+\sourcefigure{image-105940.png}{0.40\textheight}
+
+\subnotesection{Condition Code Field}
+\sourcefield{image-110008.png}{0.62}
+The condition code is the 4-bit field $c_3\,c_2\,c_1\,c_0$.
+\begingroup\small
+\begin{notetable}{@{}lXlX@{}}{\textbf{cond} & \textbf{Meaning} & \textbf{cond} & \textbf{Meaning}}
+0000 (0x0) & EQ: $Z=1$ & 1000 (0x8) & HI: $C=1$ and $Z=0$ \\
+0001 (0x1) & NE: $Z=0$ & 1001 (0x9) & LS: $C=0$ or $Z=1$ \\
+0010 (0x2) & CS/HS: $C=1$ & 1010 (0xA) & GE: $N=V$ \\
+0011 (0x3) & CC/LO: $C=0$ & 1011 (0xB) & LT: $N\ne V$ \\
+0100 (0x4) & MI: $N=1$ & 1100 (0xC) & GT: $Z=0$ and $N=V$ \\
+0101 (0x5) & PL: $N=0$ & 1101 (0xD) & LE: $Z=1$ or $N\ne V$ \\
+0110 (0x6) & VS: $V=1$ & 1110 (0xE) & AL: always \\
+0111 (0x7) & VC: $V=0$ & 1111 (0xF) & NV: never / unused \\
+\end{notetable}
+\endgroup
+
+\Needspace{18\baselineskip}
+\textbf{Branch Instructions}
+\begingroup\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.21\linewidth}>{\raggedright\arraybackslash}p{0.28\linewidth}c>{\raggedright\arraybackslash}X@{}}{\textbf{Instruction} & \textbf{Operation} & \textbf{\{S\}} & \textbf{Notes}}
+\code{B \{c\} Label} & $\mathrm{PC}\leftarrow\mathrm{PC}+\mathrm{imm}$ & n/a & `c' is an optional condition code. \\
+\code{BL Label} & $\mathrm{PC}\leftarrow\mathrm{PC}+\mathrm{imm}$\newline $\mathrm{LR}\leftarrow\text{rtn adr}$ & n/a & Sub-routine call. \\
+\code{BX Reg} & $\mathrm{PC}\leftarrow\mathrm{reg}$ & n/a & \code{BX LR}: return from function/procedure. \\
+\code{CBZ R\_n, label} & If $R_n=0$,\newline $\mathrm{PC}\leftarrow\mathrm{PC}+\mathrm{imm}$ & n/a & Cannot append a condition code to CBZ. \\
+\code{CBNZ R\_n, label} & If $R_n\ne0$,\newline $\mathrm{PC}\leftarrow\mathrm{PC}+\mathrm{imm}$ & n/a & Cannot append a condition code to CBZ. \\
+$\mathrm{IT}_{C1C2C3}$ cond & Each $c_i$ is T, E, or EMPTY & n/a & Controls 1--4 instructions in an \textbf{IT} block. \\
+\end{notetable}
+\endgroup
+
+\notesection{xPSR}
+See Lecture 2, \emph{Embedded CPUs ARM7 and M3}, ``PSR Program Status Register'' (link text: \emph{ARM Interrupt Processing}).
+
+The xPSR is a group of special registers that indicate the status of the program. It consists of the APSR, EPSR, and IPSR. The \code{GE[3:0]} is only available for the Cortex-M3 and some other ARMv6-M chips, and indicates the Greater-Than or Equal flags for each byte lane.
+
+Thumb state is always 1.
+\sourcefield{image-110803.png}{0.68}
+\begingroup\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.16\linewidth}>{\raggedright\arraybackslash}p{0.25\linewidth}>{\raggedright\arraybackslash}X@{}}{\textbf{Bit(s)} & \textbf{Name} & \textbf{Description}}
+N & Negative flag & Result is negative (sign bit = 1). \\
+Z & Zero flag & Result is zero. \\
+C & Carry (NOT borrow) flag & Carry out (or NOT borrow for subtraction). \\
+V & Overflow flag & Signed overflow occurred. \\
+Q & Sticky saturation flag & Set if a saturation (Q) occurred (not available in ARMv6-M). \\
+GE[3:0] & Greater-Than or Equal flags & Per-byte GE flags for SIMD/parallel operations (ARMv7E-M only; not available in ARMv6-M or Cortex-M3). \\
+ICI/IT & Interrupt-Continuable Instruction & IC bits, IF-THEN instruction status for conditional execution (not available in ARMv6-M). \\
+T & Thumb state & Always 1 in Thumb state; clearing this bit causes a fault exception. \\
+Exception Number & Exception Number & Indicates which exception the processor is handling. \\
+\end{notetable}
+\endgroup
+
+\Needspace{23\baselineskip}
+\subnotesection{SSAT or USAT Instruction}
+See Lecture 2, \emph{Embedded CPUs ARM7 and M3}, ``Saturation'' (link text: \emph{Saturation Inst.}).
+
+Typically organized as \code{op\{cond\} R\_d, \#n, Rm \{, shift \#s\}}.
+\begin{itemize}
+  \item \textbf{op (SSAT/USAT):} Saturates a signed value to a signed range, or a signed value to an unsigned range.
+  \item \textbf{Cond:} Condition code.
+  \item \textbf{Rd:} Specifies the destination register.
+  \item \textbf{n:} Specifies the bit position to saturate to (0--32 for SSAT and 0--31 for USAT).
+  \item \textbf{Rm:} Register containing the value to saturate.
+\end{itemize}
+\[
+\begin{aligned}
+\mathrm{SSAT}:&\quad 2^{n-1}\le x\le 2^{n-1}-1,\\
+\mathrm{USAT}:&\quad 0\le x\le 2^n-1.
+\end{aligned}
+\]
+If the returned result differs from the value to be saturated, it is called \emph{saturation}. If this occurs, the Q flag is set to 1.
+
+Example: \code{SSAT R7, \#16, R7, LSL, \#4}.
+
+\notesection{Bit-banding}
+You
+
+The M3 has memory-mapped I/O, with 4 GB of memory space organized in bytes, which is quite large. Bit-banding takes advantage of this by using two different memory regions to refer to the same physical data.
+\begin{itemize}
+  \item \textbf{Primary Bit Band Region:} Each address corresponds to a single data byte.
+  \item \textbf{Bit Band Alias:} Each address corresponds to 1 bit of the same data.
+\end{itemize}
+This allows access to a bit of data by a single instruction.
+
+Bit-banding does not allow interruption of read-modify-write.
+
+\textbf{Applications}
+\begin{itemize}
+  \item Access individual status and control bits of an I/O device, or implement a set of 1-bit Boolean flags (\emph{which can be used to implement Mutex objects}).
+\end{itemize}
+\keyequation{Bit-band Word Address}{
+\begin{aligned}
+\text{Bit-Band Word Address} ={}& \text{Bit Band Alias Base Address}\\
+ &+ (\text{Byte Offset}\times32) + (\text{Bit Number}\times4)
+\end{aligned}}
+Where \emph{Byte Offset} is:
+\[
+\text{Byte Offset}=\text{Bit's Bit Band Address}-\text{Bit Band Base Address}.
+\]
+The address range \code{0x20000000} is SRAM, and the peripheral space is \code{0x40000000}.
+
+\Needspace{7\baselineskip}
+Bit-banding is for two predefined memory regions:
+\begin{multicols}{2}
+\begin{itemize}
+  \item First 1 MB of SRAM.
+  \item First 1 MB of the Peripheral Region.
+\end{itemize}
+\end{multicols}
+One bit is addressed by its own 32-bit in a separate part of memory.
+
+\Needspace{8\baselineskip}
+\textbf{General Steps for Bit-banding}
+\begin{enumerate}
+  \item Calculate word address.
+  \item Define a pointer to the address: \code{\#define BIT\_ADDR = (*(...*))}.
+  \item Assign a value to the port bit.
+\end{enumerate}
+
+\notesection{Conditional Execution}
+Conditional execution is typically a standard ALU instruction, i.e., ADD, with a conditional statement added as a suffix: \code{ADDEQ}. This instruction will only execute when the zero flag in the CPSR is set.
+
+\notesection{IT Block (If-Then)}
+The IT block makes up the four following instructions. Its general form is:
+\begin{notecode}[language={}]
+IT {x {y {z} } } {cond}
+\end{notecode}
+\begin{itemize}
+  \item \emph{x} specifies the condition switch for the second instruction in an IT block.
+  \item \emph{y} specifies the condition switch for the third instruction in the IT block.
+  \item \emph{z} specifies the condition switch for the fourth instruction in the IT block.
+  \item \emph{cond} specifies the condition for the first instruction in the IT block.
+\end{itemize}
+The condition switch for the 2nd, 3rd, and 4th instruction in the IT block is either:
+\begin{itemize}
+  \item \emph{T}, Then: Applies the condition cond to the instruction.
+  \item \emph{E}, Else: Applies the inverse condition of cond to the instruction.
+\end{itemize}
+The instructions (including branches) in the IT block, except the \emph{BKPT} instruction, must specify the condition in the \code{\{cond\}} part of their syntax.
+
+The assembler auto-generates the IT blocks according to the conditions with respect to instructions.
+\begin{itemize}
+  \item With the exception of CMP, CMN, and TST, the 16-bit instructions that normally affect the condition code flags do not affect them in the IT block.
+  \item A BKPT instruction is always executed; it does not need a condition in the \code{\{cond\}} part of the syntax.
+  \item Conditional branches have a longer branch range than outside the IT block.
+\end{itemize}
+The following instructions are not allowed inside an IT block: \code{IT, CBZ \& CBNZ, TBB \& TBH, CPS \& CPSID \& CPSIE, SETEND}.
+
+\textbf{Some other restrictions:}
+\begin{itemize}
+  \item A branch or any instruction that modifies PC is only allowed as the last instruction in the block.
+  \item Cannot branch to any instruction in an IT block, unless returning from an exception handler.
+\end{itemize}
+\Needspace{4\baselineskip}
+This instruction is only available as a 16-bit instruction in ARMv6T2 and above, and is pseudocode in regular ARM code.
+
+ARM allows non-control-flow-based instructions to be appended with conditional codes, allowing more efficient coding and processor performance:
+\begin{notecode}[language=ARM]
+CMP r2, #5 //if(a<=5);
+MOVELE R2, #10 //a = 10;
+MOVGT r2, #1 //else a=1;
+\end{notecode}
+
+\subnotesection{ITTE Block}
+\sourcefigure{image-004555.png}{0.48\textheight}
+
+\Needspace{25\baselineskip}
+\notesection{Loop Variables}
+\begin{notecode}[language=C]
+while (a!= b){
+    if(a>b) a = a-b;
+    else b = b-a;
+}
+\end{notecode}
+\begin{notecode}[language=ARM]
+LDR R0, a
+LDR R1, b
+top: CMP R0, R1
+     BEQ done
+     ITE GT
+     SUBGT R0, R0, R1
+     SUBLE R1, R1, R0
+     B top
+done:
+     ; R0 = R1 = GCD(a,b)
+\end{notecode}
+
+\notesection{Function Call and Return}
+\textbf{Function Call:} \code{BL Function}
+\begin{itemize}
+  \item Loads the program counter (PC) with the entry-point address of the function.
+  \item Saves the return address in the link register.
+\end{itemize}
+\textbf{Function Return:} \code{BX lr}
+\begin{itemize}
+  \item Copies the link register back into the program counter.
+\end{itemize}
+
+\Needspace{0.65\textheight}
+\notesection{Temporary Variables}
+\sourcefigure{image-015921.png}{0.53\textheight}
+\emph{r0--r3} are not used for any parameters and must be preserved and restored around any call.\par
+\emph{r4--r8} must always be preserved and restored.
+
+\textbf{Essentially:}
+\begin{enumerate}
+  \item \code{r0-r3} are temporary (scratch) registers: functions can freely use/overwrite them for parameters, return values, and temporary variables.
+  \item \code{r4-r8} must be preserved. If a function uses them, it must \textbf{push} their original values onto the stack and \textbf{pop} them before returning.
+  \item LR stores the return address. If a function calls another function with BL, it should save LR first because the new BL will overwrite it.
+\end{enumerate}
+
+\Needspace{14\baselineskip}
+\notesection{Cortex A, X, and C1 Series CPU}
+The \textbf{A72} has $3.5\times$ the performance of the A15, and is paired with the A53 to get \emph{big little} architecture.
+
+\textbf{Cortex A75}
+\begin{itemize}
+  \item Can execute 3 instructions per clock cycle and has 7 execution units.
+  \item Has two load/stores, two NEON \& FPUs, a BPU, and two integer cores.
+\end{itemize}
+
+\subnotesection{Unified C1 Family}
+\begingroup\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.16\linewidth}>{\raggedright\arraybackslash}p{0.17\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}{\textbf{Core Name} & \textbf{Predecessor} & \textbf{Key Benefit} & \textbf{Ideal Uses}}
+Cortex-X925\newline\textcolor{red}{(2024)} & Cortex-X4\newline\textcolor{red}{(2023)} & Ultimate performance (+36\% vs X4) & Flagship smartphones, laptops \\
+C1-Ultra\newline\textcolor{red}{(2025)} & Cortex-X925 & Flagship peak performance (+25\% vs X925) & Generative AI, content creation \\
+C1-Premium & New Category & Ultra performance, 35\% smaller area & Sub-flagship mobile, multitasking \\
+C1-Pro & Cortex-A725 & +16\% sustained performance & Video playback, gaming \\
+C1-Nano & Cortex-A520 & 26\% more power-efficient & Wearables (smart watch), background tasks \\
+\end{notetable}
+\endgroup
+The smartphone cores are classified across four categories: Lumex C1-Ultra, Lumex C1-Premium, Lumex-C1 Pro, and the Lumex C1-Nano.
+
+\subnotesection{ARMv7 Suffixes}
+Instructions do not update the PSR unless a suffix \textbf{S} is appended to the instruction (exceptions: \emph{CMP} and \emph{Test}, e.g., TST, TEQ, which write to the PSR directly).
+
+Consists of 16-bit Thumb instructions.
+
+There also exist suffixes to indicate the size of the word to be loaded or stored, in the form \emph{LDR(size).W}.
+
+\subnotesection{Conditional Execution}
+It exists, and executes individual instructions based on the condition flags set by the previous instruction(s). It can be invoked by using branches or adding a condition-code suffix to the instruction.
+
+\textbf{Table 4.1: Suffixes in Instructions}
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.22\linewidth}>{\raggedright\arraybackslash}X@{}}{\textbf{Suffix} & \textbf{Description}}
+S & Update Application Program Status register (APSR) (flags); for example: \code{ADDS R0, R1 ; this will update APSR}. \\
+EQ, NE, LT, GT, and so on & Conditional execution; EQ = Equal, NE = Not Equal, LT = Less Than, GT = Greater Than, and so forth. For example: \code{BEQ <label> ; branch if equal}. \\
+\end{notetable}
+\Needspace{20\baselineskip}
+\textbf{BNE, BLT, BGT, etc.}
+\begingroup\small
+\begin{notetable}{@{}l>{\raggedright\arraybackslash}X@{}}{\textbf{Instruction} & \textbf{Description}}
+B & Branch. \\
+B<cond> & Conditional branch. \\
+BL & Branch with link; call a subroutine and store the return address in LR (this is actually a 32-bit instruction, but it is also available in Thumb in traditional ARM processors). \\
+BLX & Branch with link and change state (BLX <reg> only)\textsuperscript{1}. \\
+BX <reg> & Branch with exchange state. \\
+CBZ & Compare and branch if zero (architecture v7). \\
+CBNZ & Compare and branch if nonzero (architecture v7). \\
+IT & IF-THEN (architecture v7). \\
+\end{notetable}
+\endgroup
+IT blocks handle small conditional code and are used to avoid branch penalties. They have a maximum of four conditionally executed instructions.
+
+\subnotesection{Bit-banding}
+Address \code{0x20000000}: SRAM.\par
+Address \code{0x40000000}: Peripheral.
+\[
+\begin{aligned}
+\text{Bit band word address} ={}& \text{Bit band alias Base address}\\
+ &+ (\text{Byte Offset}\times32) + (\text{Bit number}\times4).
+\end{aligned}
+\]
+Where:
+\[
+\text{byte offset}=\text{Bit's Bit band base address}-\text{Bit band base address}.
+\]
+Bit-banding enables fewer instructions for bit manipulation/access.
+\end{document}

@@ -3,6 +3,8 @@
 \usetikzlibrary{arrows.meta}
 \lectureheader{ELE727}{3}
 \begin{document}
+\tableofcontents
+\clearpage
 \notesection{Basic Current Mirrors}
 \begin{notecircuit}[american, scale=0.55, transform shape]{Basic NMOS Current Mirror}
     % Mirror M1 so its gate faces M2, as in the reference diagram.
@@ -43,7 +45,7 @@ To derive the relation between $I_{out}$ and $I_{ref}$, we simply use the defint
         \item Similarly, the sensing transistor must sense: $f^{-1}(I_{REF})$ and generate $f(f^{-1}(I_{REF}))$ (\textit{$V_{GS}$ is the cause and the effect is the output current: $f(f^{-1}(I_{REF}))$})
     \end{itemize}
 }
-\subnotesection{Using $I_{REF}$ to create $\frac{1}{2}I_{REF}$ and $2I_{REF}$}
+\subnotesection{\texorpdfstring{Using $I_{REF}$ to create $\frac{1}{2}I_{REF}$ and $2I_{REF}$}{Using I\_REF to create (1/2) I\_REF and 2 I\_REF}}
 \begin{notecircuit}[american, scale=0.55, transform shape]{Current Scaling with Parallel and Series Unit Transistors}
     \node[nmos,arrowmos,xscale=-1] (Mref) at (0,0) {};
     \node[nmos,arrowmos] (Mp1) at (2.2,0) {};
@@ -163,7 +165,7 @@ On the other hand, for the $\frac{1}{2}I_{REF}$ branch, consider how having two 
 \vspace{20mm}
 \keyequation{$I_{out}$ in relation to $I_{REF}$ of a NMOS/PMOS CM}{I_{out} = \frac{(W/L)_2}{(W/L)_1} \cdot \frac{(W/L)_4}{(W/L)_3} \cdot I_{REF}}
 
-\notesection{Including Channel-length Modulation, $\lambda$}
+\notesection{\texorpdfstring{Including Channel-length Modulation, $\lambda$}{Including Channel-length Modulation, lambda}}
 
 Consider the equation for drain current including CLM. We can easily derive the relation between the current relation: 
 
@@ -320,7 +322,7 @@ This establishes why we want $V_{GS0} = V_{GS3}$: so $V_Y = V_X$ and for \textbf
     \frac{(W/L)_3}{(W/L)_0} = \frac{I_{out}}{I_{REF}} = \frac{(W/L)_2}{(W/L)_1}
 }
 
-\subnotesection{Compliance Voltage of $V_{DS2} = V_{DS1}$ Approach of Cascode Current Mirrors (Ex. 5.4)}
+\subnotesection{\texorpdfstring{Compliance Voltage of $V_{DS2} = V_{DS1}$ Approach of Cascode Current Mirrors (Ex. 5.4)}{Compliance Voltage of V\_DS2 = V\_DS1 Approach of Cascode Current Mirrors (Ex. 5.4)}}
 \includegraphics[width=1 \linewidth]{figures/vb-vx-compliance-diagram.png}
 
 

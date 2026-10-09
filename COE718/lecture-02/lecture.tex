@@ -10,6 +10,8 @@
   \end{center}\smallskip}
 
 \begin{document}
+\tableofcontents
+\clearpage
 
 \notesection{Processor Architectures}
 \subnotesection{Von Neumann Architecture}
@@ -205,6 +207,19 @@ It is a 3-stage pipeline CPU, where each stage takes 1 clock cycle.
       \item Improves code density and flushing the pipeline for branches, and increases execution performance.
     \end{itemize}
 \end{itemize}
+
+\Needspace{20\baselineskip}
+\subnotesection{ARM Core Comparison}
+\begingroup
+\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.16\linewidth} >{\raggedright\arraybackslash}p{0.18\linewidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}{\textbf{Core Name} & \textbf{Predecessor} & \textbf{Key Benefit} & \textbf{Ideal Uses}}
+  Cortex-X925\newline\textcolor{red}{(2024)} & Cortex-X4\newline\textcolor{red}{(2023)} & Ultimate performance (+36\% vs X4) & Flagship smartphones, laptops \\
+  C1-Ultra\newline\textcolor{red}{(2025)} & Cortex-X925 & Flagship peak performance (+25\% vs X925) & Generative AI, content creation \\
+  C1-Premium & New Category & Ultra performance, 35\% smaller area & Sub-flagship mobile, multitasking \\
+  C1-Pro & Cortex-A725 & +16\% sustained performance & Video playback, gaming \\
+  C1-Nano & Cortex-A520 & 26\% more power-efficient & Wearables, background tasks \\
+\end{notetable}
+\endgroup
 
 \notesection{Cortex-M4}
 Has a combination of efficient signal processing and lower power consumption.
