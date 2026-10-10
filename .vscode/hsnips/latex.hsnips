@@ -1360,7 +1360,15 @@ endsnippet
 
 context text(context)
 snippet ;fig "Figure with image" bA
-\notefigure[width=0.8\linewidth,maxheight=65mm,placement=here,label=fig:$3]{figures/$1}{$2}
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=0.8\linewidth,height=65mm,keepaspectratio]{figures/$1}
+    \caption{$2}
+    \label{fig:$3}
+\end{minipage}
+\par\addvspace{7pt}
 $0
 endsnippet
 

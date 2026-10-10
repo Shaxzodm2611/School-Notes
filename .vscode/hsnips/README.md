@@ -104,7 +104,7 @@ Type these at the beginning of a line, optionally after indentation:
 | `;def` | `\notedefinition{title}{body}` |
 | `;keq` | `\keyequation{title}{math}` |
 | `;der` | `notederivation` with an optional explanation column |
-| `;fig` | `\notefigure` with image, caption, label, size limits, and inline placement |
+| `;fig` | Inline `\includegraphics` with image-path completion, caption, label, and size limits |
 | `;tbl` | Notes table with columns, header, and row fields |
 | `;pan2`, `;pan3`, `;panel` | Two/three titled columns, or an additional panel |
 | `;drv`, `;step` | Wrapping derivation, or an additional equation/explanation step |

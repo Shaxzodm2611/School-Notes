@@ -183,7 +183,10 @@ for (let level = 1; level <= 5; level++) {
 noAuto(";h6");
 expect(";nav", "\\notesetup{toc-depth=$1,bookmark-depth=$2}\n$0", "");
 expect(";hbm", "\\noteheading[bookmark={$1}]{$2}{$3}\n$0", "");
-expect(";fig", "\\notefigure[width=0.8\\linewidth,maxheight=65mm,placement=here,label=fig:$3]{figures/$1}{$2}\n$0", "");
+const figureSnippet = expect(";fig", "\\par\\addvspace{7pt}\n\\noindent\\begin{minipage}{\\linewidth}\n    \\centering\n    \\captionsetup{hypcap=false,type=figure}\n    \\includegraphics[width=0.8\\linewidth,height=65mm,keepaspectratio]{figures/$1}\n    \\caption{$2}\n    \\label{fig:$3}\n\\end{minipage}\n\\par\\addvspace{7pt}\n$0", "");
+assert.deepEqual(figureSnippet.instance.placeholderIds, [1, 2, 3, 0], "Figure fields must be path, caption, label, then exit");
+assert.equal(figureSnippet.instance.selectedPlaceholder, 1, "Figure starts in the image path");
+checks += 2;
 expect(";drv", "\\begin{notederivation}[mode=steps]{$1}\n    \\derivestep{$2}{$3}\n\\end{notederivation}\n$0", "");
 expect(";step", "\\derivestep{$1}{$2}\n$0", "\\begin{notederivation}[mode=steps]{Title}\n");
 expect("sq", "\\sqrt{$1}$0", "\\begin{notederivation}[explanation=beside]{Title}\n & ");
@@ -288,6 +291,7 @@ if (process.argv.includes("--compile")) {
         + fill(";pan2", {1:"First",2:"First panel",3:"Second",4:"Second panel"}, "")
         + fill(";pan3", {1:"One",2:"First panel",3:"Two",4:"Second panel",5:"Three",6:"Third panel"}, "")
         + fill(";fig", {1:"sample.png",2:"Generated figure",3:"generated"}, "")
+        + "Figure reference: \\ref{fig:generated}.\n"
         + fill(";cset", {1:"compact"}, "")
         + fill(";cir", {1:"Generated circuit",2:"\\draw (0,0) to[R] (2,0);"}, "")
         + fill(";tbl", {1:"ll",2:"Symbol & Meaning",3:"$x$ & Value"}, "")
@@ -300,6 +304,12 @@ if (process.argv.includes("--compile")) {
     const result = spawnSync("pdftotext", ["-f", "1", "-l", "1", "lecture.pdf", "-"], {cwd:directory, encoding:"utf8"});
     assert.equal(result.status, 0, result.error?.message || result.stderr);
     for (let level = 1; level <= 5; level++) assert.ok(result.stdout.includes(`Generated heading ${level}`), "Missing heading in rendered contents");
+    const fullText = spawnSync("pdftotext", ["lecture.pdf", "-"], {cwd:directory, encoding:"utf8"});
+    assert.equal(fullText.status, 0, fullText.error?.message || fullText.stderr);
+    const text = fullText.stdout.replace(/\s+/g, " ");
+    assert.ok(text.includes("Figure 1: Generated figure"), "Figure must display the caption field");
+    assert.ok(text.includes("Figure reference: 1."), "Figure label must resolve independently");
+    assert.ok(!text.includes("sample.png"), "Image filename must not become the figure caption");
     console.log("PASS: generated LaTeX compiles, including all five headings and contents entries, matrices, cases, custom lecture blocks, and table row endings.");
     console.log("Compilation fixture: " + directory);
 }
