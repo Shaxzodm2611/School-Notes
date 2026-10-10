@@ -4,6 +4,10 @@ These workspace-local HyperSnips shortcuts follow the common defaults from
 [Obsidian LaTeX Suite](https://github.com/artisticat1/obsidian-latex-suite/blob/main/src/default_snippets.js),
 adapted for `.tex` files and the lecture-note commands in this repository.
 
+For exact block calls, options, and rendered results, open the
+[Block Reference](../../typesetting-block-reference.pdf). Its final page is a
+quick lookup for the block shortcuts below.
+
 Open `school-notes` as your VS Code workspace. Most shortcuts expand automatically
 as you type. Press **Tab** to advance to the next field, **Shift+Tab** to go back,
 and **Escape** to leave the current snippet. For the few manual completions,
@@ -96,11 +100,32 @@ Type these at the beginning of a line, optionally after indentation:
 | Type | Block |
 | --- | --- |
 | `;sec`, `;sub` | Topic and subtopic headings |
+| `;h1` through `;h5` | `\noteheading{1}{title}` through `\noteheading{5}{title}` |
 | `;def` | `\notedefinition{title}{body}` |
 | `;keq` | `\keyequation{title}{math}` |
 | `;der` | `notederivation` with an optional explanation column |
-| `;fig` | Figure with image, caption, and label fields |
+| `;fig` | `\notefigure` with image, caption, label, size limits, and inline placement |
 | `;tbl` | Notes table with columns, header, and row fields |
+| `;pan2`, `;pan3`, `;panel` | Two/three titled columns, or an additional panel |
+| `;drv`, `;step` | Wrapping derivation, or an additional equation/explanation step |
+| `;cset`, `;cir` | Circuit preset (`none`, `compact`, `standard`) and circuit block |
+| `;cur`, `;mark` | Compact current marker and connection highlight |
+| `;nav`, `;hbm` | Navigation depths and a heading with a plain bookmark title |
+
+The heading shortcuts expand automatically at the beginning of a line. Type
+the title, then press Tab to move to the following line. Level 1 is the main
+topic, level 2 is a subtopic, and levels 3 through 5 nest further below it.
+All five levels appear in the contents and PDF outline by default. `;nav`
+sets their depths independently; all headings remain in the lecture body.
+`;hbm` provides a plain sidebar title for a printed mathematical heading.
+`;sec` and `;sub`
+remain available. Use **HyperSnips: Reload Snippets** after updating this file.
+
+The new blocks require `lecturenotes.sty` v0.2.0. `;drv` selects `mode=steps`
+so math shortcuts expand inside each equation and explanations stay in prose.
+`;der` retains its original expansion. Panel widths can be customized with
+`widths={2,1}`; use `placement=float` on a standard figure for normal LaTeX
+floating placement. Inline placement keeps the image with its caption.
 
 `;sum` keeps its previous expansion `\sum_{n=-\infty}^{\infty}` in any editable
 context. Use `sq` for the root shortcut. Bare `sqrt` is superseded by the earlier

@@ -62,7 +62,18 @@ function scanLatex(before) {
                     const mode = codeEnvironments.has(base) ? "code"
                         : mathEnvironments.has(base) ? "math" : current().mode;
                     frames.push({ kind: "environment", name, mode });
-                    if (base === "notederivation") pending = ["text"];
+                    if (base === "notederivation") {
+                        pending = ["text"];
+                        const after = before.slice(i + environment[0].length);
+                        const optionStart = /^\s*\[/.exec(after);
+                        if (optionStart) {
+                            const optionEnd = after.indexOf("]", optionStart[0].length);
+                            if (optionEnd === -1) return {mode:"text", command:/\\[A-Za-z@]*$/.test(before)};
+                            const options = after.slice(optionStart[0].length, optionEnd);
+                            if (/\bmode\s*=\s*steps\b/.test(options)) current().mode = "text";
+                            i += optionEnd + 1;
+                        }
+                    }
                 }
                 i += environment[0].length;
                 continue;
@@ -90,7 +101,12 @@ function scanLatex(before) {
             const command = /^\\([A-Za-z@]+)\*?/.exec(tail);
             if (command) {
                 const name = command[1];
+                if (name === "derivestep") {
+                    const derivation = frames.findLast(frame => frame.kind === "environment" && frame.name === "notederivation");
+                    if (derivation) derivation.mode = "text";
+                }
                 pending = name === "keyequation" ? ["text", "math"]
+                    : name === "derivestep" ? ["math", "text"]
                     : name === "ensuremath" ? ["math"]
                     : textCommands.has(name) ? ["text"] : [];
                 i += command[0].length;
@@ -1344,12 +1360,7 @@ endsnippet
 
 context text(context)
 snippet ;fig "Figure with image" bA
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.8\linewidth]{figures/$1}
-    \caption{$2}
-    \label{fig:$3}
-\end{figure}
+\notefigure[width=0.8\linewidth,maxheight=65mm,placement=here,label=fig:$3]{figures/$1}{$2}
 $0
 endsnippet
 
@@ -1386,9 +1397,128 @@ $0
 endsnippet
 
 context text(context)
+snippet ;h1 "Heading level 1: topic" bA
+\noteheading{1}{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;h2 "Heading level 2: subtopic" bA
+\noteheading{2}{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;h3 "Heading level 3" bA
+\noteheading{3}{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;h4 "Heading level 4" bA
+\noteheading{4}{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;h5 "Heading level 5" bA
+\noteheading{5}{$1}
+$0
+endsnippet
+
+context text(context)
 snippet ;der "Note derivation" bA
 \begin{notederivation}{$1}
     & $2 && \qquad \text{$3}
 \end{notederivation}
+$0
+endsnippet
+
+context text(context)
+snippet ;drv "Wrapping derivation steps" bA
+\begin{notederivation}[mode=steps]{$1}
+    \derivestep{$2}{$3}
+\end{notederivation}
+$0
+endsnippet
+
+context text(context)
+snippet ;step "Derivation step with wrapping explanation" bA
+\derivestep{$1}{$2}
+$0
+endsnippet
+
+context text(context)
+snippet ;pan2 "Two note panels" bA
+\begin{notepanels}[columns=2,gap=6mm]
+    \begin{notepanel}{$1}
+        $2
+    \end{notepanel}
+    \begin{notepanel}{$3}
+        $4
+    \end{notepanel}
+\end{notepanels}
+$0
+endsnippet
+
+context text(context)
+snippet ;pan3 "Three note panels" bA
+\begin{notepanels}[columns=3,gap=6mm]
+    \begin{notepanel}{$1}
+        $2
+    \end{notepanel}
+    \begin{notepanel}{$3}
+        $4
+    \end{notepanel}
+    \begin{notepanel}{$5}
+        $6
+    \end{notepanel}
+\end{notepanels}
+$0
+endsnippet
+
+context text(context)
+snippet ;panel "Single panel inside a panel row" bA
+\begin{notepanel}{$1}
+    $2
+\end{notepanel}
+$0
+endsnippet
+
+context text(context)
+snippet ;nav "Contents and bookmark depths" bA
+\notesetup{toc-depth=$1,bookmark-depth=$2}
+$0
+endsnippet
+
+context text(context)
+snippet ;hbm "Heading with a plain bookmark title" bA
+\noteheading[bookmark={$1}]{$2}{$3}
+$0
+endsnippet
+
+context text(context)
+snippet ;cset "Circuit preset: none, compact, or standard" bA
+\notesetup{circuit-preset=$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;cir "Note circuit" bA
+\begin{notecircuit}{$1}
+    $2
+\end{notecircuit}
+$0
+endsnippet
+
+context text(context)
+snippet ;cur "Compact current marker" bA
+\draw[note-current] ($1)--($2);
+$0
+endsnippet
+
+context text(context)
+snippet ;mark "Highlight a circuit connection" bA
+\draw[note-highlight] $1;
 $0
 endsnippet

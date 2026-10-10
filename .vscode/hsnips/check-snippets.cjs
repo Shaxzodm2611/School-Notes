@@ -161,6 +161,61 @@ expect(";def", "\\notedefinition{$1}{$2}\n$0", "");
 expect(";sum", "\\sum_{n=-\\infty}^{\\infty}$0", "");
 expect(";sec", "\\notesection{$1}\n$0", "");
 expect(";sub", "\\subnotesection{$1}\n$0", "");
+for (let level = 1; level <= 5; level++) {
+    const heading = expect(`;h${level}`, `\\noteheading{${level}}{$1}\n$0`, "");
+    assert.deepEqual(heading.instance.placeholderIds, [1, 0]);
+    expect(`;h${level}`, `\\noteheading{${level}}{$1}\n$0`, "    ");
+    noAuto("Ordinary prose: " + `;h${level}`);
+    const mathCompletion = completion(mathPrefix + `;h${level}`).result;
+    const mathMatches = Array.isArray(mathCompletion) ? mathCompletion : [mathCompletion];
+    assert.ok(mathMatches.every(match => match.snippet.trigger !== `;h${level}`), "Heading expanded inside math");
+    checks++;
+    noAuto("% " + `;h${level}`);
+    noAuto("\\begin{notecode}\n" + `;h${level}`);
+    let typed = "";
+    for (const char of `;h${level}`) {
+        typed += char;
+        if (!Array.isArray(completion(typed).result)) typed = expansion(typed).text;
+    }
+    assert.equal(typed, `\\noteheading{${level}}{$1}\n$0`, "Sequential heading trigger");
+    checks++;
+}
+noAuto(";h6");
+expect(";nav", "\\notesetup{toc-depth=$1,bookmark-depth=$2}\n$0", "");
+expect(";hbm", "\\noteheading[bookmark={$1}]{$2}{$3}\n$0", "");
+expect(";fig", "\\notefigure[width=0.8\\linewidth,maxheight=65mm,placement=here,label=fig:$3]{figures/$1}{$2}\n$0", "");
+expect(";drv", "\\begin{notederivation}[mode=steps]{$1}\n    \\derivestep{$2}{$3}\n\\end{notederivation}\n$0", "");
+expect(";step", "\\derivestep{$1}{$2}\n$0", "\\begin{notederivation}[mode=steps]{Title}\n");
+expect("sq", "\\sqrt{$1}$0", "\\begin{notederivation}[explanation=beside]{Title}\n & ");
+expect("@a", "\\alpha $0", "\\begin{notederivation}[mode=steps]{Title}\n\\derivestep{");
+noAuto("\\begin{notederivation}[mode=steps]{Title}\n\\derivestep{x}{Ordinary pi");
+noAuto("\\begin{notederivation}[mode=steps]{Title @a");
+noAuto("\\begin{notederivation}[explanation=beside @a");
+noAuto("\\begin{notederivation}{Title}\n\\derivestep{x}{Ordinary pi");
+expect(";cir", "\\begin{notecircuit}{$1}\n    $2\n\\end{notecircuit}\n$0", "");
+expect(";cset", "\\notesetup{circuit-preset=$1}\n$0", "");
+expect(";cur", "\\draw[note-current] ($1)--($2);\n$0", "");
+expect(";mark", "\\draw[note-highlight] $1;\n$0", "");
+for (const columns of [2, 3]) {
+    const body = `\\begin{notepanels}[columns=${columns},gap=6mm]\n`
+        + Array.from({length:columns}, (_, i) => `    \\begin{notepanel}{$${2*i+1}}\n        $${2*i+2}\n    \\end{notepanel}\n`).join("")
+        + "\\end{notepanels}\n$0";
+    const panel = expect(`;pan${columns}`, body, "");
+    assert.deepEqual(panel.instance.placeholderIds, [...Array.from({length:columns*2}, (_,i)=>i+1),0]);
+}
+expect(";panel", "\\begin{notepanel}{$1}\n    $2\n\\end{notepanel}\n$0", "");
+for (const trigger of [";pan2", ";pan3", ";drv", ";fig", ";nav", ";hbm", ";cset", ";cir", ";cur", ";mark"]) {
+    noAuto("Ordinary prose: " + trigger);
+    noAuto("% " + trigger);
+    noAuto("\\begin{notecode}\n" + trigger);
+    let typed = "";
+    for (const char of trigger) {
+        typed += char;
+        if (!Array.isArray(completion(typed).result)) typed = expansion(typed).text;
+    }
+    assert.equal(typed, expansion(trigger).text, "Sequential feature trigger: " + trigger);
+    checks++;
+}
 noAuto("\\begin{notecode}\n;def");
 noAuto("% ;sum");
 for (const [trigger, description] of [["par", "Partial derivative (Tab)"], ["\\sum", "sum limits (Tab)"], ["\\int", "Integral with differential (Tab)"]]) {
@@ -203,6 +258,10 @@ if (process.argv.includes("--compile")) {
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), "latex-suite-check-"));
     const style = process.env.LATEX_STYLE || path.resolve(__dirname, "../../ELE745/lecture-02/lecturenotes.sty");
     fs.copyFileSync(style, path.join(directory, "lecturenotes.sty"));
+    fs.mkdirSync(path.join(directory, "figures"));
+    const figureDir = path.resolve(__dirname, "../../ELE745/lecture-02/figures");
+    const figure = fs.readdirSync(figureDir).find(name => name.endsWith(".png"));
+    fs.copyFileSync(path.join(figureDir, figure), path.join(directory, "figures", "sample.png"));
     const fill = (trigger, values = {}, prefix = mathPrefix) => {
         const raw = expansion(prefix + trigger).text.slice(prefix.length);
         return raw.replace(/\$(\d+)/g, (_, index) => values[index] || "");
@@ -219,16 +278,28 @@ if (process.argv.includes("--compile")) {
         fill("dint", {1:"0",2:"1",3:"x^2",4:"x"}), fill("bra", {1:"x"}),
         fill("iso", {1:"4",2:"2",3:"He"})
     ];
-    const document = "\\documentclass{article}\n\\usepackage{lecturenotes}\n\\lectureheader{Snippets}{1}\n\\begin{document}\n"
+    const document = "\\documentclass{article}\n\\usepackage{lecturenotes}\n\\lectureheader{Snippets}{1}\n\\begin{document}\n\\tableofcontents\n\\clearpage\n"
+        + [1, 2, 3, 4, 5].map(level => fill(`;h${level}`, {1:`Generated heading ${level}`}, "")).join("\n")
         + fill("mk", {1:"x+1"}, "") + "\n"
         + samples.map(sample => "\\["+sample+"\\]\n").join("")
         + fill(";keq", {1:"Generated equation",2:"x^2+y^2"}, "")
         + fill(";der", {1:"Generated derivation",2:"x=y",3:"Equality"}, "")
+        + fill(";drv", {1:"Wrapping derivation",2:"x=y",3:"An explanation that wraps as normal text below the equation."}, "")
+        + fill(";pan2", {1:"First",2:"First panel",3:"Second",4:"Second panel"}, "")
+        + fill(";pan3", {1:"One",2:"First panel",3:"Two",4:"Second panel",5:"Three",6:"Third panel"}, "")
+        + fill(";fig", {1:"sample.png",2:"Generated figure",3:"generated"}, "")
+        + fill(";cset", {1:"compact"}, "")
+        + fill(";cir", {1:"Generated circuit",2:"\\draw (0,0) to[R] (2,0);"}, "")
         + fill(";tbl", {1:"ll",2:"Symbol & Meaning",3:"$x$ & Value"}, "")
         + "\\end{document}\n";
     fs.writeFileSync(path.join(directory,"lecture.tex"), document);
-    const result = spawnSync("pdflatex", ["-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "lecture.tex"], {cwd:directory, encoding:"utf8"});
-    assert.equal(result.status, 0, result.error?.message || result.stdout?.slice(-6000) || result.stderr);
-    console.log("PASS: generated LaTeX compiles, including matrices, cases, custom lecture blocks, and table row endings.");
+    for (let pass = 0; pass < 2; pass++) {
+        const result = spawnSync("pdflatex", ["-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "lecture.tex"], {cwd:directory, encoding:"utf8"});
+        assert.equal(result.status, 0, result.error?.message || result.stdout?.slice(-6000) || result.stderr);
+    }
+    const result = spawnSync("pdftotext", ["-f", "1", "-l", "1", "lecture.pdf", "-"], {cwd:directory, encoding:"utf8"});
+    assert.equal(result.status, 0, result.error?.message || result.stderr);
+    for (let level = 1; level <= 5; level++) assert.ok(result.stdout.includes(`Generated heading ${level}`), "Missing heading in rendered contents");
+    console.log("PASS: generated LaTeX compiles, including all five headings and contents entries, matrices, cases, custom lecture blocks, and table row endings.");
     console.log("Compilation fixture: " + directory);
 }
