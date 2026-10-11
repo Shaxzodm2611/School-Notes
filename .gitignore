@@ -25,3 +25,6 @@
 !*.tif
 !*.tiff
 !*.webp
+
+# Keep the block reference beside the notes; lecture PDFs remain excluded.
+!/typesetting-block-reference.pdf

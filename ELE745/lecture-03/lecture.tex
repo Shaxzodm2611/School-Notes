@@ -1,0 +1,143 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{lecturenotes}
+\notesetup{toc-depth=3,bookmark-depth=5}
+\lectureheader{ELE745}{3}
+\begin{document}
+
+\tableofcontents
+\clearpage
+\noteheading{1}{Principle of Digital Data Transmission}
+
+Transmission model is as follows:
+
+\begin{itemize}
+    \item The binary source generates the transmitted sequence $b_n$, where $b_n \in \{0,1\}$.
+    \item \textcolor{red}{Line coding} converts the binary information $b_n$ into electrical pulses for transmission over a channel. When a pulse occupies the full symbol duration, it is of the NRZ type; when it occupies only a fraction of the symbol duration, it is of the RZ type.
+\end{itemize}
+
+\notedefinition{NRZ vs. RZ Line Coding}{\textbf{NRZ}: The pulse occupies the full symbol duration. \\ \textbf{RZ}: The pulse occupies a fraction of the symbol duration.}
+
+Let $p(t)$ denote the pulse waveform. The line-coding formats are:
+\begin{enumerate}
+    \setlength{\itemsep}{8pt}
+    \item On-off (unipolar): \quad $\displaystyle y(t) = \begin{cases}
+        p(t) & (b_n = 1) \\
+        0 & (b_n = 0)
+    \end{cases}$
+    \item Polar (antipodal): \quad $\displaystyle y(t) = \begin{cases}
+        p(t) & (b_n = 1) \\
+        -p(t) & (b_n = 0)
+    \end{cases}$
+    \item Bipolar: \quad $\displaystyle y(t) = \begin{cases}
+        p(t),\,-p(t) & \text{alternating for } b_n = 1 \\
+        0 & (b_n = 0)
+    \end{cases}$
+    \item Manchester: \quad $\displaystyle y(t) = \begin{cases}
+        p(t),\,-p(t) & (b_n = 1) \\
+        -p(t),\,p(t) & (b_n = 0)
+    \end{cases}$
+\end{enumerate}
+
+\noteheading{2}{Line Coding Derivation and Auto-correlation}
+
+\textcolor{red}{$R_{B}$} - the data stream rate where \textcolor{red}{$T_{B}$} is the time duration of 1-bit.
+
+An anti-podal line encoding scheme has the following relation:
+
+\begin{notetable}{XXX}{\textbf{Anti-podal} & \textbf{$b_{k}$} & \textbf{$a_{k}$}}
+    & 1 & 1 \\
+    & 0 & -1 \\
+\end{notetable}
+\notefigure[width=0.8\linewidth,maxheight=65mm,placement=here,label=fig:]{figures/line-coding-bit-timing-and-pulses.png}{Line Coding Bit-timing}
+
+This can be generalized as: $a_{k} = (2b_{k}-1)$, and to convert the bitstream to for transmission: $\sum_k[2b_{k}-1]\cdotp(t-kT_{b})$
+\keyequation{Output of Y(t) after Anti-podal Line Encoding}{y(t) = \sum_k[2b_{k}-1]\cdotp(t-kT_{b})}
+
+\noteheading{3}{Auto-correlation}
+
+\begin{center}
+    \begin{tikzpicture}[font=\small\sffamily, text=NoteInk,
+        correlation-arrow/.style={draw=NoteAccent, line width=0.3pt,
+            -{Latex[length=2pt,width=1.4pt]}},
+        correlation-step/.style={draw=NoteRule, fill=NoteTint,
+            line width=0.3pt, inner sep=3pt, minimum height=5mm}]
+        \node[anchor=east, text=NoteMuted] at (-0.5,0) {Same bitstream};
+        \foreach \k in {1,...,5} {
+            \pgfmathtruncatemacro{\nextbit}{\k+1}
+            \node at (\k-1,0.4) {$b_{\k}$};
+            \node[text=NoteAccent] at (\k-1,0) {$\times$};
+            \node at (\k-1,-0.4) {$b_{\nextbit}$};
+            \draw[correlation-arrow] (\k-1,-0.6) -- (\k-1,-0.95);
+        }
+        \draw[NoteMuted, line width=0.3pt]
+            (4.3,0.55) -- (4.45,0.55) -- (4.45,-0.55) -- (4.3,-0.55);
+        \node[anchor=west, text=NoteMuted] at (4.6,0) {Multiply};
+        \draw[NoteAccent, line width=0.3pt] (0,-0.95) -- (4,-0.95);
+        \node[correlation-step] (sum) at (2,-1.4) {Sum};
+        \node[correlation-step] (average) at (2,-2.2) {Average};
+        \draw[correlation-arrow] (2,-0.95) -- (sum.north);
+        \draw[correlation-arrow] (sum.south) -- (average.north);
+    \end{tikzpicture}
+\end{center}
+
+Auto-correlation literally means correlation with itself (due to the word \textit{"auto"})
+\noteheading{2}{Line coding Selection}
+A good line code should have the following properties:
+\begin{itemize}
+    \item Transmission BW: Should be as small as possible
+    \item Power Effiency: For a given BW, and detection error probability, the transmitted power should be as small as possible
+    \item PSD: It is desirable to have a zero PSD at f = 0 (\textcolor{red}{DC Null})
+\end{itemize}
+
+\noteheading{1}{Power Spectral Density of y(t)}
+
+Consider a series of pulses with internel $T_{b}$, $x(t)$ or $a_{n}$, then the \textit{autocorrelation} function of the sequence, $a_{n}$ is:
+$$
+\begin{aligned}
+    R_{0} &= \lim_{N\to \infty} \frac{1}{N} = a^{2}_k \\
+    R_{1} &= \lim_{N\to \infty} \frac{1}{N} = a_k a_{k+1} \\ 
+\end{aligned}
+$$
+\keyequation{Autocorrelation Equation of Function $x(t)$ with Internel $T_{b}$}{
+    R_{n} = \lim_{N \to \infty} \frac{1}{N} \sum_{k=1}^N a_{k} + a_{k+n} = E[a_{k}a_{k+1}]
+}
+
+\noteheading{2}{PSD, $S_{y}$, Derivation for Polar Coding}
+
+\begin{notederivation}[mode=steps]{Polar autocorrelation}
+    \assumption{The bits are independent and equally likely, with $a_k=2b_k-1\in\{-1,1\}$.}
+
+    \derivestep{
+        R_0 &= \lim_{N\to\infty}\frac{1}{N}\sum_{k=1}^{N}a_k^2
+            = \lim_{N\to\infty}\frac{N}{N} = 1
+    }{}
+
+    \begin{notetable}{*{5}{>{\centering\arraybackslash}X}}{
+        $b_{k-1}$ & $b_k$ & $a_{k-1}$ & $a_k$ & \textbf{Probability}}
+        $0$ & $0$ & $-1$ & $-1$ & $\frac14$ \\
+        $0$ & $1$ & $-1$ & $1$ & $\frac14$ \\
+        $1$ & $0$ & $1$ & $-1$ & $\frac14$ \\
+        $1$ & $1$ & $1$ & $1$ & $\frac14$ \\
+    \end{notetable}
+
+    \derivestep{
+        R_1 &= (-1)(-1)\frac14 + (-1)(1)\frac14
+            + (1)(-1)\frac14 + (1)(1)\frac14 \\
+            &= \frac14-\frac14-\frac14+\frac14 = 0 \\
+        R_n &= \begin{cases}
+            1 & n=0 \\
+            0 & n\ne0
+        \end{cases}
+    }{}
+\end{notederivation}
+
+\keyequation{PSD of Polar Line Coding}{
+    \begin{aligned}
+        S_y(f) &= \frac{|P(f)|^2}{T_b}
+            \sum_{n=-\infty}^{\infty}R_n e^{-j2\pi fnT_b} \\
+        &= \frac{|P(f)|^2}{T_b}R_0
+         = \frac{|P(f)|^2}{T_b}
+    \end{aligned}
+}
+
+\end{document}

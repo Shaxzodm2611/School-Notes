@@ -10,8 +10,6 @@
   \end{center}\smallskip}
 
 \begin{document}
-\tableofcontents
-\clearpage
 
 \notesection{Processor Architectures}
 \subnotesection{Von Neumann Architecture}
@@ -181,45 +179,32 @@ It is a 3-stage pipeline CPU, where each stage takes 1 clock cycle.
 \textbf{Features}
 \begin{itemize}
   \item \textbf{Combined shift and ALU execution stage}
-    \begin{itemize}
-      \item A single instruction can identify one of its two source operands for shifting or rotation before being passed to ALU.
-      \item Allows efficient bit manipulation and scaling code.
-      \item Eliminates virtually single shift instructions from ARM code.
-      \item A move instruction can still apply a shift to its operand.
-    \end{itemize}
+        \begin{itemize}
+          \item A single instruction can identify one of its two source operands for shifting or rotation before being passed to ALU.
+          \item Allows efficient bit manipulation and scaling code.
+          \item Eliminates virtually single shift instructions from ARM code.
+          \item A move instruction can still apply a shift to its operand.
+        \end{itemize}
   \item \textbf{Uses von Neumann memory architecture} where instructions and data occupy single address space.
-    \begin{itemize}
-      \item Instruction fetching/execution must stop for instructions that access memory (\emph{Structural Hazard}).
-      \item Pipeline stalls during load and store operations.
-    \end{itemize}
+        \begin{itemize}
+          \item Instruction fetching/execution must stop for instructions that access memory (\emph{Structural Hazard}).
+          \item Pipeline stalls during load and store operations.
+        \end{itemize}
   \item \textbf{Multiple Load and Store Operation}
-    \begin{itemize}
-      \item Reduces the penalty of data accesses during a stall in the pipeline. Multiple load/store instructions can move any of the ARM registers to and from memory, and automatically update the memory address register.
-      \item Allows one instruction to transfer many words of data; it also reduces the amount of instructions needed to transfer data.
-      \item Makes ARM code smaller than other 32-bit CPUs.
-      \item Instructions specify an update of the base-address register with a new address after the transfer.
-    \end{itemize}
+        \begin{itemize}
+          \item Reduces the penalty of data accesses during a stall in the pipeline. Multiple load/store instructions can move any of the ARM registers to and from memory, and automatically update the memory address register.
+          \item Allows one instruction to transfer many words of data; it also reduces the amount of instructions needed to transfer data.
+          \item Makes ARM code smaller than other 32-bit CPUs.
+          \item Instructions specify an update of the base-address register with a new address after the transfer.
+        \end{itemize}
   \item \textbf{All instructions are conditionally executed}
-    \begin{itemize}
-      \item Loads, stores, procedural calls and returns, and other operations can execute conditionally after some prior instruction to set condition code flags.
-      \item Any ALU instruction may set the flags.
-      \item Eliminates short-forward branches in ARM code.
-      \item Improves code density and flushing the pipeline for branches, and increases execution performance.
-    \end{itemize}
+        \begin{itemize}
+          \item Loads, stores, procedural calls and returns, and other operations can execute conditionally after some prior instruction to set condition code flags.
+          \item Any ALU instruction may set the flags.
+          \item Eliminates short-forward branches in ARM code.
+          \item Improves code density and flushing the pipeline for branches, and increases execution performance.
+        \end{itemize}
 \end{itemize}
-
-\Needspace{20\baselineskip}
-\subnotesection{ARM Core Comparison}
-\begingroup
-\small
-\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.16\linewidth} >{\raggedright\arraybackslash}p{0.18\linewidth} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}{\textbf{Core Name} & \textbf{Predecessor} & \textbf{Key Benefit} & \textbf{Ideal Uses}}
-  Cortex-X925\newline\textcolor{red}{(2024)} & Cortex-X4\newline\textcolor{red}{(2023)} & Ultimate performance (+36\% vs X4) & Flagship smartphones, laptops \\
-  C1-Ultra\newline\textcolor{red}{(2025)} & Cortex-X925 & Flagship peak performance (+25\% vs X925) & Generative AI, content creation \\
-  C1-Premium & New Category & Ultra performance, 35\% smaller area & Sub-flagship mobile, multitasking \\
-  C1-Pro & Cortex-A725 & +16\% sustained performance & Video playback, gaming \\
-  C1-Nano & Cortex-A520 & 26\% more power-efficient & Wearables, background tasks \\
-\end{notetable}
-\endgroup
 
 \notesection{Cortex-M4}
 Has a combination of efficient signal processing and lower power consumption.
@@ -292,12 +277,12 @@ Saturation arithmetic prevents integer overflow by clamping a result to the maxi
   \item \textbf{Hardware interrupt occurs:} CPU finishes, suspends, abandons current instruction and initiates \emph{exception response sequence}.
   \item \textbf{Exception Response Sequence:} CPU stacks the processor state and return address. Enables Handler mode, identifies the requesting device, and transfers control to the corresponding \textbf{ISR (Interrupt Service Routine)}.
   \item \textbf{Exception Handler/ISR}
-    \begin{enumerate}
-      \item Preserves \texttt{R4--R11} as needed.
-      \item Transfers data between queue and I/O devices.
-      \item Restores \texttt{R4--R11} as needed.
-      \item Returns to interrupted code.
-    \end{enumerate}
+        \begin{enumerate}
+          \item Preserves \texttt{R4--R11} as needed.
+          \item Transfers data between queue and I/O devices.
+          \item Restores \texttt{R4--R11} as needed.
+          \item Returns to interrupted code.
+        \end{enumerate}
   \item \textbf{Exception Return:} Unstack and restore processor state and mode.
   \item \textbf{Interrupt Complete:} Interrupted code continues where it left off as nothing happened.
 \end{enumerate}
@@ -317,9 +302,9 @@ Each exception has:
 \textbf{Exception Response:}
 \begin{itemize}
   \item Processor state (8 words) stored on stack: CSPR (Status), Return Address (PC), LR, R12, R3--R0.
-    \begin{itemize}
-      \item Processor state is auto-saved by Cortex M3/M4.
-    \end{itemize}
+        \begin{itemize}
+          \item Processor state is auto-saved by Cortex M3/M4.
+        \end{itemize}
   \item Processor switches from \emph{thread mode} to \emph{handler mode}.
   \item Vector Table [Exception \#] stored on PC.
 \end{itemize}
@@ -355,5 +340,6 @@ Provides ability to:
   \item Individually enable/disable interrupts from specific devices.
   \item Establishes relative priorities among the various interrupts.
 \end{itemize}
+
 
 \end{document}
