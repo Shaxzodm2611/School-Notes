@@ -183,7 +183,7 @@ for (let level = 1; level <= 5; level++) {
 noAuto(";h6");
 expect(";nav", "\\notesetup{toc-depth=$1,bookmark-depth=$2}\n$0", "");
 expect(";hbm", "\\noteheading[bookmark={$1}]{$2}{$3}\n$0", "");
-const figureSnippet = expect(";fig", "\\par\\addvspace{7pt}\n\\noindent\\begin{minipage}{\\linewidth}\n    \\centering\n    \\captionsetup{hypcap=false,type=figure}\n    \\includegraphics[width=0.8\\linewidth,height=65mm,keepaspectratio]{figures/$1}\n    \\caption{$2}\n    \\label{fig:$3}\n\\end{minipage}\n\\par\\addvspace{7pt}\n$0", "");
+const figureSnippet = expect(";fig", "\\par\\addvspace{7pt}\n\\noindent\\begin{minipage}{\\linewidth}\n    \\centering\n    \\captionsetup{hypcap=false,type=figure}\n    \\includegraphics[width=0.8\\linewidth,keepaspectratio]{figures/$1}\n    \\caption{$2}\n    \\label{fig:$3}\n\\end{minipage}\n\\par\\addvspace{7pt}\n$0", "");
 assert.deepEqual(figureSnippet.instance.placeholderIds, [1, 2, 3, 0], "Figure fields must be path, caption, label, then exit");
 assert.equal(figureSnippet.instance.selectedPlaceholder, 1, "Figure starts in the image path");
 checks += 2;

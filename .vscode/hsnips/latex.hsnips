@@ -1364,7 +1364,7 @@ snippet ;fig "Figure with image" bA
 \noindent\begin{minipage}{\linewidth}
     \centering
     \captionsetup{hypcap=false,type=figure}
-    \includegraphics[width=0.8\linewidth,height=65mm,keepaspectratio]{figures/$1}
+    \includegraphics[width=0.8\linewidth,keepaspectratio]{figures/$1}
     \caption{$2}
     \label{fig:$3}
 \end{minipage}
