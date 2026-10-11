@@ -95,12 +95,17 @@ Type these at the beginning of a line, optionally after indentation:
 
 | Type | Block |
 | --- | --- |
-| `;sec`, `;sub` | Topic and subtopic headings |
+| `;sec` | Topic heading: `\notesection{title}` |
+| `;sub` | Subtopic heading: `\subnotesection{title}` |
+| `;det` | Detail heading: `\notedetail{title}` |
+| `;para` | Paragraph heading: `\noteparagraph{title}` |
 | `;def` | `\notedefinition{title}{body}` |
 | `;keq` | `\keyequation{title}{math}` |
 | `;der` | `notederivation` with an optional explanation column |
 | `;fig` | Figure with image, caption, and label fields |
 | `;tbl` | Notes table with columns, header, and row fields |
+
+The four heading levels nest in this order in the contents and PDF bookmarks.
 
 `;sum` keeps its previous expansion `\sum_{n=-\infty}^{\infty}` in any editable
 context. Use `sq` for the root shortcut. Bare `sqrt` is superseded by the earlier

@@ -161,6 +161,17 @@ expect(";def", "\\notedefinition{$1}{$2}\n$0", "");
 expect(";sum", "\\sum_{n=-\\infty}^{\\infty}$0", "");
 expect(";sec", "\\notesection{$1}\n$0", "");
 expect(";sub", "\\subnotesection{$1}\n$0", "");
+for (const [trigger, command] of [[";det", "notedetail"], [";para", "noteparagraph"]]) {
+    const heading = expect(trigger, "\\" + command + "{$1}\n$0", "");
+    assert.deepEqual(heading.instance.placeholderIds, [1, 0]);
+    expect(trigger, "\\" + command + "{$1}\n$0", "    ");
+    noAuto("Prose " + trigger);
+    const mathResult = completion(mathPrefix + trigger).result;
+    assert.ok(Array.isArray(mathResult) || mathResult.snippet.description !== heading.snippet.description);
+    checks++;
+    noAuto("% " + trigger);
+    noAuto("\\begin{notecode}\n" + trigger);
+}
 noAuto("\\begin{notecode}\n;def");
 noAuto("% ;sum");
 for (const [trigger, description] of [["par", "Partial derivative (Tab)"], ["\\sum", "sum limits (Tab)"], ["\\int", "Integral with differential (Tab)"]]) {
@@ -220,6 +231,13 @@ if (process.argv.includes("--compile")) {
         fill("iso", {1:"4",2:"2",3:"He"})
     ];
     const document = "\\documentclass{article}\n\\usepackage{lecturenotes}\n\\lectureheader{Snippets}{1}\n\\begin{document}\n"
+        + "\\tableofcontents\n\\clearpage\n"
+        + fill(";sec", {1:"Generated topic"}, "")
+        + fill(";sub", {1:"Generated subtopic"}, "")
+        + fill(";det", {1:"Generated detail"}, "")
+        + "Detail text.\n"
+        + fill(";para", {1:"Generated paragraph"}, "")
+        + "Paragraph text.\n"
         + fill("mk", {1:"x+1"}, "") + "\n"
         + samples.map(sample => "\\["+sample+"\\]\n").join("")
         + fill(";keq", {1:"Generated equation",2:"x^2+y^2"}, "")
@@ -227,8 +245,10 @@ if (process.argv.includes("--compile")) {
         + fill(";tbl", {1:"ll",2:"Symbol & Meaning",3:"$x$ & Value"}, "")
         + "\\end{document}\n";
     fs.writeFileSync(path.join(directory,"lecture.tex"), document);
-    const result = spawnSync("pdflatex", ["-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "lecture.tex"], {cwd:directory, encoding:"utf8"});
-    assert.equal(result.status, 0, result.error?.message || result.stdout?.slice(-6000) || result.stderr);
-    console.log("PASS: generated LaTeX compiles, including matrices, cases, custom lecture blocks, and table row endings.");
+    for (let pass = 0; pass < 2; pass++) {
+        const result = spawnSync("pdflatex", ["-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "lecture.tex"], {cwd:directory, encoding:"utf8"});
+        assert.equal(result.status, 0, result.error?.message || result.stdout?.slice(-6000) || result.stderr);
+    }
+    console.log("PASS: generated LaTeX compiles, including four heading levels, matrices, cases, custom lecture blocks, and table row endings.");
     console.log("Compilation fixture: " + directory);
 }

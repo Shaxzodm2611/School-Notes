@@ -1335,7 +1335,7 @@ snippet `(?<![A-Za-z])iso` "iso" A
 {}^{$1}_{$2}\mathrm{$3}$0
 endsnippet
 
-# Existing lecture snippets plus topic/subtopic and derivation shortcuts.
+# Existing lecture snippets plus four heading levels and derivation shortcuts.
 
 context editable(context)
 snippet ;sum "Sum over all integers (any editable context)" A
@@ -1382,6 +1382,18 @@ endsnippet
 context text(context)
 snippet ;sub "Subtopic heading" bA
 \subnotesection{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;det "Detail heading" bA
+\notedetail{$1}
+$0
+endsnippet
+
+context text(context)
+snippet ;para "Paragraph heading" bA
+\noteparagraph{$1}
 $0
 endsnippet
 

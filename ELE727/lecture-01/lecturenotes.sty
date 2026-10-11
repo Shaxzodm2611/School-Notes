@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{lecturenotes}[2026/10/08 v0.1.6 Lecture summary formatting]
+\ProvidesPackage{lecturenotes}[2026/10/09 v0.1.7 Lecture summary formatting]
 \RequirePackage[T1]{fontenc}
 \RequirePackage{lmodern}
 \RequirePackage[margin=22mm,includehead,headheight=24pt,headsep=8mm]{geometry}
@@ -22,7 +22,7 @@
 \RequirePackage{listings}
 % Load after the other packages so contents entries also become PDF bookmarks.
 \RequirePackage[hidelinks,unicode,linktoc=all,bookmarksopen=true,
-  bookmarksdepth=2,pdfpagemode=UseOutlines]{hyperref}
+  bookmarksdepth=4,pdfpagemode=UseOutlines]{hyperref}
 \pgfplotsset{compat=1.18}
 
 \definecolor{NoteAccent}{HTML}{246A70}
@@ -42,8 +42,8 @@
   \fancyhead[L]{\fontsize{12}{14}\selectfont\sffamily\bfseries\color{NoteAccent}\textls[60]{#1}}%
   \fancyhead[R]{\fontsize{11}{13}\selectfont\sffamily\bfseries\color{NoteInk}Lecture #2}}
 
-% Record two unnumbered heading levels in the contents and PDF outline.
-\setcounter{tocdepth}{2}
+% Record four unnumbered heading levels in the contents and PDF outline.
+\setcounter{tocdepth}{4}
 % Keep contents entries compact without changing paragraph spacing in the notes.
 \AddToHook{cmd/tableofcontents/before}{\begingroup\setlength{\parskip}{0pt}}
 \AddToHook{cmd/tableofcontents/after}{\endgroup}
@@ -65,6 +65,19 @@
   \addcontentsline{toc}{subsection}{#1}%
   {\fontsize{11}{14}\selectfont\sffamily\bfseries\color{NoteAccent}#1\par}%
   \nobreak\vspace{2pt}\noindent\ignorespaces}
+
+\NewDocumentCommand{\notedetail}{m}{%
+  \par\addvspace{6pt}\Needspace{3\baselineskip}%
+  \phantomsection
+  \addcontentsline{toc}{subsubsection}{#1}%
+  {\fontsize{10}{13}\selectfont\sffamily\bfseries\color{NoteInk}#1\par}%
+  \nobreak\vspace{2pt}\noindent\ignorespaces}
+\NewDocumentCommand{\noteparagraph}{m}{%
+  \par\addvspace{5pt}\Needspace{3\baselineskip}%
+  \phantomsection
+  \addcontentsline{toc}{paragraph}{#1}%
+  {\fontsize{10}{13}\selectfont\sffamily\itshape\color{NoteMuted}#1\par}%
+  \nobreak\vspace{1pt}\noindent\ignorespaces}
 
 \tcbset{noteblock/.style={enhanced,breakable,colback=NoteTint,
   colframe=NoteAccent,boxrule=0pt,leftrule=1.5pt,arc=0pt,
