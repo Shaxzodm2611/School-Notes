@@ -21,22 +21,33 @@ Let $p(t)$ denote the pulse waveform. The line-coding formats are:
 \begin{enumerate}
     \setlength{\itemsep}{8pt}
     \item On-off (unipolar): \quad $\displaystyle y(t) = \begin{cases}
-        p(t) & (b_n = 1) \\
-        0 & (b_n = 0)
-    \end{cases}$
+                  p(t) & (b_n = 1) \\
+                  0    & (b_n = 0)
+              \end{cases}$
     \item Polar (antipodal): \quad $\displaystyle y(t) = \begin{cases}
-        p(t) & (b_n = 1) \\
-        -p(t) & (b_n = 0)
-    \end{cases}$
+                  p(t)  & (b_n = 1) \\
+                  -p(t) & (b_n = 0)
+              \end{cases}$
     \item Bipolar: \quad $\displaystyle y(t) = \begin{cases}
-        p(t),\,-p(t) & \text{alternating for } b_n = 1 \\
-        0 & (b_n = 0)
-    \end{cases}$
+                  p(t),\,-p(t) & \text{alternating for } b_n = 1 \\
+                  0            & (b_n = 0)
+              \end{cases}$
     \item Manchester: \quad $\displaystyle y(t) = \begin{cases}
-        p(t),\,-p(t) & (b_n = 1) \\
-        -p(t),\,p(t) & (b_n = 0)
-    \end{cases}$
+                  p(t),\,-p(t) & (b_n = 1) \\
+                  -p(t),\,p(t) & (b_n = 0)
+              \end{cases}$
 \end{enumerate}
+
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=1\linewidth,height=65mm,keepaspectratio]{figures/baseband-line-coding.png}
+    \caption{Base-band Line Encoding Examples}
+    \label{fig:}
+\end{minipage}
+\par\addvspace{7pt}
+
 
 \noteheading{2}{Line Coding Derivation and Auto-correlation}
 
@@ -58,19 +69,19 @@ This can be generalized as: $a_{k} = (2b_{k}-1)$, and to convert the bitstream t
 \begin{center}
     \begin{tikzpicture}[font=\small\sffamily, text=NoteInk,
         correlation-arrow/.style={draw=NoteAccent, line width=0.3pt,
-            -{Latex[length=2pt,width=1.4pt]}},
+        -{Latex[length=2pt,width=1.4pt]}},
         correlation-step/.style={draw=NoteRule, fill=NoteTint,
-            line width=0.3pt, inner sep=3pt, minimum height=5mm}]
+                line width=0.3pt, inner sep=3pt, minimum height=5mm}]
         \node[anchor=east, text=NoteMuted] at (-0.5,0) {Same bitstream};
         \foreach \k in {1,...,5} {
-            \pgfmathtruncatemacro{\nextbit}{\k+1}
-            \node at (\k-1,0.4) {$b_{\k}$};
-            \node[text=NoteAccent] at (\k-1,0) {$\times$};
-            \node at (\k-1,-0.4) {$b_{\nextbit}$};
-            \draw[correlation-arrow] (\k-1,-0.6) -- (\k-1,-0.95);
-        }
+                \pgfmathtruncatemacro{\nextbit}{\k+1}
+                \node at (\k-1,0.4) {$b_{\k}$};
+                \node[text=NoteAccent] at (\k-1,0) {$\times$};
+                \node at (\k-1,-0.4) {$b_{\nextbit}$};
+                \draw[correlation-arrow] (\k-1,-0.6) -- (\k-1,-0.95);
+            }
         \draw[NoteMuted, line width=0.3pt]
-            (4.3,0.55) -- (4.45,0.55) -- (4.45,-0.55) -- (4.3,-0.55);
+        (4.3,0.55) -- (4.45,0.55) -- (4.45,-0.55) -- (4.3,-0.55);
         \node[anchor=west, text=NoteMuted] at (4.6,0) {Multiply};
         \draw[NoteAccent, line width=0.3pt] (0,-0.95) -- (4,-0.95);
         \node[correlation-step] (sum) at (2,-1.4) {Sum};
@@ -93,14 +104,19 @@ A good line code should have the following properties:
 
 Consider a series of pulses with internel $T_{b}$, $x(t)$ or $a_{n}$, then the \textit{autocorrelation} function of the sequence, $a_{n}$ is:
 $$
-\begin{aligned}
-    R_{0} &= \lim_{N\to \infty} \frac{1}{N} = a^{2}_k \\
-    R_{1} &= \lim_{N\to \infty} \frac{1}{N} = a_k a_{k+1} \\ 
-\end{aligned}
+    \begin{aligned}
+        R_{0} & = \lim_{N\to \infty} \frac{1}{N} = a^{2}_k     \\
+        R_{1} & = \lim_{N\to \infty} \frac{1}{N} = a_k a_{k+1} \\
+    \end{aligned}
 $$
 \keyequation{Autocorrelation Equation of Function $x(t)$ with Internel $T_{b}$}{
     R_{n} = \lim_{N \to \infty} \frac{1}{N} \sum_{k=1}^N a_{k} + a_{k+n} = E[a_{k}a_{k+1}]
 }
+
+In general, for a line coding waveform, the PSD, $S_{y}$ can be defined:
+\keyequation{PSD of $S_{x}(f)$}{S_{x} = \frac{1}{T_{B}}(R_{0} + \sum_{n=\infty n \neq 0}^{\infty} R_{n}e^{-j2\pi n f T_{B}})}
+
+\keyequation{PSD of Line Coding Waveform}{S_{y}(f) = |P(f)|^{2}S_{x}(f) = \frac{|P(f)|^{2}}{T_{b}}\left(R_{n}\cos 2\pi n f T_{b} \right)}
 
 \noteheading{2}{PSD, $S_{y}$, Derivation for Polar Coding}
 
@@ -109,11 +125,11 @@ $$
 
     \derivestep{
         R_0 &= \lim_{N\to\infty}\frac{1}{N}\sum_{k=1}^{N}a_k^2
-            = \lim_{N\to\infty}\frac{N}{N} = 1
+        = \lim_{N\to\infty}\frac{N}{N} = 1
     }{}
 
     \begin{notetable}{*{5}{>{\centering\arraybackslash}X}}{
-        $b_{k-1}$ & $b_k$ & $a_{k-1}$ & $a_k$ & \textbf{Probability}}
+            $b_{k-1}$ & $b_k$ & $a_{k-1}$ & $a_k$ & \textbf{Probability}}
         $0$ & $0$ & $-1$ & $-1$ & $\frac14$ \\
         $0$ & $1$ & $-1$ & $1$ & $\frac14$ \\
         $1$ & $0$ & $1$ & $-1$ & $\frac14$ \\
@@ -122,10 +138,10 @@ $$
 
     \derivestep{
         R_1 &= (-1)(-1)\frac14 + (-1)(1)\frac14
-            + (1)(-1)\frac14 + (1)(1)\frac14 \\
-            &= \frac14-\frac14-\frac14+\frac14 = 0 \\
+        + (1)(-1)\frac14 + (1)(1)\frac14 \\
+        &= \frac14-\frac14-\frac14+\frac14 = 0 \\
         R_n &= \begin{cases}
-            1 & n=0 \\
+            1 & n=0   \\
             0 & n\ne0
         \end{cases}
     }{}
@@ -133,11 +149,406 @@ $$
 
 \keyequation{PSD of Polar Line Coding}{
     \begin{aligned}
-        S_y(f) &= \frac{|P(f)|^2}{T_b}
-            \sum_{n=-\infty}^{\infty}R_n e^{-j2\pi fnT_b} \\
-        &= \frac{|P(f)|^2}{T_b}R_0
-         = \frac{|P(f)|^2}{T_b}
+        S_y(f) & = \frac{|P(f)|^2}{T_b}
+        \sum_{n=-\infty}^{\infty}R_n e^{-j2\pi fnT_b} \\
+               & = \frac{|P(f)|^2}{T_b}R_0
+        = \frac{|P(f)|^2}{T_b}
     \end{aligned}
 }
+If p(t) is a rectangular pulse function with 50\% duty cycle, $p(t) = rect(\frac{t}{T_{b}/2})$ then the PSD would be defined as:
+\keyequation{PSD of Polar Signal Waveform with p(t) as Rect Pulse Function}{S_{y}(f) = \frac{T_{b}}{4}\operatorname{sinc}^{2}(\frac{nfT_{b}}{2})}
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=0.8\linewidth,height=65mm,keepaspectratio]{figures/polar-rz-power-spectrum.png}
+    \caption{Polar Signal $S_{y}$}
+    \label{fig:}
+\end{minipage}
+\par\addvspace{7pt}
+
+\begin{itemize}
+    \item Not BW efficient: essential BW is $2R_{B}$, compared with the minimum bandwidth: $\frac{R_{B}}{2}$
+    \item No error detection or correction capability
+    \item Non-zero PSD at DC (peak value at $f=0$)
+\end{itemize}
+
+\Needspace{10\baselineskip}
+\noteheading{2}{On-off Signalling}
+\begin{notederivation}[mode=steps]{On-off autocorrelation}
+    \assumption{The bits are independent and equally likely, with $a_k=b_k\in\{0,1\}$.}
+
+    \begin{notetable}{*{3}{>{\centering\arraybackslash}X}}{
+            $b_k$ & $a_k$ & \textbf{Probability}}
+        $1$ & $1$ & $\frac12$ \\
+        $0$ & $0$ & $\frac12$ \\
+    \end{notetable}
+
+    \derivestep{
+        R_0 &= E[a_k^2] = 1^2\frac12 + 0^2\frac12 = \frac12
+    }{}
+
+    \begin{notetable}{*{5}{>{\centering\arraybackslash}X}}{
+            $b_{k-1}$ & $b_k$ & $a_{k-1}$ & $a_k$ & \textbf{Probability}}
+        $0$ & $0$ & $0$ & $0$ & $\frac14$ \\
+        $0$ & $1$ & $0$ & $1$ & $\frac14$ \\
+        $1$ & $0$ & $1$ & $0$ & $\frac14$ \\
+        $1$ & $1$ & $1$ & $1$ & $\frac14$ \\
+    \end{notetable}
+
+    \derivestep{
+        R_1 &= (0)(0)\frac14 + (0)(1)\frac14
+        + (1)(0)\frac14 + (1)(1)\frac14 = \frac14 \\
+        R_n &= \begin{cases}
+            \frac12 & n=0   \\
+            \frac14 & n\ne0
+        \end{cases}
+    }{}
+\end{notederivation}
+
+\begin{notederivation}[mode=steps]{On-off power spectral density}
+    \derivestep{
+        S_x(f) &= \frac{1}{T_b}\left(R_0+
+        \sum_{\substack{n=-\infty\\n\ne0}}^{\infty}
+        R_n e^{-j2\pi nfT_b}\right) \\
+        &= \frac{1}{T_b}\left(\frac12+
+        \frac14\sum_{\substack{n=-\infty\\n\ne0}}^{\infty}
+        e^{-j2\pi nfT_b}\right) \\
+        &= \frac{1}{T_b}\left(\frac14+
+        \frac14\sum_{n=-\infty}^{\infty}e^{-j2\pi nfT_b}\right)
+    }{}
+
+    \derivestep{
+        \sum_{n=-\infty}^{\infty}\delta(t-nT_b)
+        &\overset{\mathcal F}{\longleftrightarrow}
+        \frac{1}{T_b}\sum_{m=-\infty}^{\infty}
+        \delta\left(f-\frac{m}{T_b}\right) \\
+        \therefore\quad
+        \sum_{n=-\infty}^{\infty}e^{-j2\pi nfT_b}
+        &= \frac{1}{T_b}\sum_{m=-\infty}^{\infty}
+        \delta\left(f-\frac{m}{T_b}\right)
+    }{}
+
+    \derivestep{
+        S_x(f) &= \frac{1}{4T_b}+
+        \frac{1}{4T_b^2}\sum_{m=-\infty}^{\infty}
+        \delta\left(f-\frac{m}{T_b}\right)
+    }{}
+\end{notederivation}
+
+\keyequation{PSD of On-off Line Coding}{
+    S_y(f)=|P(f)|^2S_x(f)
+    =\frac{|P(f)|^2}{4T_b}\left[
+        1+\frac{1}{T_b}\sum_{m=-\infty}^{\infty}
+        \delta\left(f-\frac{m}{T_b}\right)\right]
+}
+If p(t) is a rectangular pulse function with 50\% duty cycle, $p(t) = rect(\frac{t}{T_{b}/2})$ then the PSD would be defined as:
+\keyequation{PSD of On-off Waveform with p(t) as Rect Pulse Function}{S_{y}(f)=\frac{T_{b}}{16}\operatorname{sinc}^{2}(\frac{\pi f T_{b}}{2})\left[ 1 + \frac{1}{T_{b}}\sum_n \delta (f-\frac{n}{T_{b}})\right]}
+
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=0.8\linewidth,height=65mm,keepaspectratio]{figures/rz-spectrum-with-impulses.png}
+    \caption{$S_{y}(f)$ of On-off Line Coding Waveform}
+    \label{fig:}
+\end{minipage}
+\par\addvspace{7pt}
+
+\begin{itemize}
+    \item Not bandwidth efficient: same as polar waveform
+    \item No error detection or correction capability
+    \item Non-zero PSD at DC
+\end{itemize}
+
+\Needspace{10\baselineskip}
+\noteheading{2}{Bipolar Signalling}
+
+\begin{notederivation}[mode=steps]{Bipolar autocorrelation}
+    \assumption{The bits are independent and equally likely. A zero gives $a_k=0$; successive ones alternate between $+1$ and $-1$.}
+
+    \begin{notetable}{*{3}{>{\centering\arraybackslash}X}}{
+            $b_k$ & $a_k$ & \textbf{Probability}}
+        $0$ & $0$ & $\frac12$ \\
+        $1$ & $\pm1$ & $\frac12$ \\
+    \end{notetable}
+
+    \derivestep{
+        R_0 &= E[a_k^2] = 0^2\frac12 + (\pm1)^2\frac12 = \frac12
+    }{}
+
+    \begin{notetable}{*{5}{>{\centering\arraybackslash}X}}{
+            $b_{k-1}$ & $b_k$ & $a_{k-1}$ & $a_k$ & \textbf{Probability}}
+        $0$ & $0$ & $0$ & $0$ & $\frac14$ \\
+        $0$ & $1$ & $0$ & $\pm1$ & $\frac14$ \\
+        $1$ & $0$ & $\pm1$ & $0$ & $\frac14$ \\
+        $1$ & $1$ & $\pm1$ & $\mp1$ & $\frac14$ \\
+    \end{notetable}
+
+    \derivestep{
+        R_1 &= 0\frac14 + 0\frac14 + 0\frac14 + (-1)\frac14
+        = -\frac14
+    }{}
+
+    \begin{notetable}{*{7}{>{\centering\arraybackslash}X}}{
+            $b_{k-2}$ & $b_{k-1}$ & $b_k$ & $a_{k-2}$ & $a_{k-1}$ & $a_k$ & \textbf{\small Probability}}
+        $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $\frac18$ \\
+        $0$ & $0$ & $1$ & $0$ & $0$ & $1$ & $\frac18$ \\
+        $0$ & $1$ & $0$ & $0$ & $1$ & $0$ & $\frac18$ \\
+        $0$ & $1$ & $1$ & $0$ & $1$ & $-1$ & $\frac18$ \\
+        $1$ & $0$ & $0$ & $1$ & $0$ & $0$ & $\frac18$ \\
+        $1$ & $0$ & $1$ & $1$ & $0$ & $-1$ & $\frac18$ \\
+        $1$ & $1$ & $0$ & $1$ & $-1$ & $0$ & $\frac18$ \\
+        $1$ & $1$ & $1$ & $1$ & $-1$ & $1$ & $\frac18$ \\
+    \end{notetable}
+    {\small\color{NoteMuted}Amplitudes shown up to an overall sign.\par}
+
+    \derivestep{
+        R_2 &= (1)(-1)\frac18 + (1)(1)\frac18 = 0
+    }{}
+
+    \derivestep{
+        M &= \sum_{i=1}^{n-1} b_{k+i}, \qquad n\ge2 \\
+        P(M\text{ even}) &= P(M\text{ odd}) = \frac12 \\
+        R_n &= \frac14\left[(-1)\frac12+(1)\frac12\right]=0,
+        \qquad n\ge2 \\
+        R_n &= \begin{cases}
+            \frac12  & n=0     \\
+            -\frac14 & |n|=1   \\
+            0        & |n|\ge2
+        \end{cases}
+    }{}
+\end{notederivation}
+
+\begin{notederivation}[mode=steps]{Bipolar power spectral density}
+    \derivestep{
+        S_y(f) &= \frac{|P(f)|^2}{T_b}
+        \sum_{n=-\infty}^{\infty}R_n e^{-j2\pi nfT_b} \\
+        &= \frac{|P(f)|^2}{T_b}\left[\frac12
+            -\frac14 e^{-j2\pi fT_b}-\frac14 e^{j2\pi fT_b}\right] \\
+        &= \frac{|P(f)|^2}{2T_b}\left[1-\cos(2\pi fT_b)\right] \\
+        &= \frac{|P(f)|^2}{T_b}\sin^2(\pi fT_b),
+        \qquad 1-\cos(2x)=2\sin^2x
+    }{}
+\end{notederivation}
+
+\keyequation{PSD of Bipolar Line Coding}{
+    S_y(f)=\frac{|P(f)|^2}{T_b}\sin^2(\pi fT_b)
+}
+
+\begin{notederivation}[mode=steps]{50\% duty-cycle rectangular pulse}
+    \derivestep{
+        p(t) &= \operatorname{rect}\left(\frac{t}{T_b/2}\right),
+        \qquad \operatorname{sinc}(x)=\frac{\sin(\pi x)}{\pi x} \\
+        P(f) &= \frac{T_b}{2}\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+    }{}
+\end{notederivation}
+
+\keyequation{PSD of Bipolar RZ Waveform}{
+    S_y(f)=\frac{T_b}{4}\operatorname{sinc}^2\left(\frac{fT_b}{2}\right)
+    \sin^2(\pi fT_b)
+}
+
+\notefigure[width=0.9\linewidth,maxheight=65mm,placement=here,label=fig:bipolar-rz-psd]{figures/bipolar-rz-power-spectrum.png}{Bipolar RZ power spectrum}
+
+\[
+    S_y(mR_B)=0,\qquad m\in\mathbb Z,\qquad R_B=\frac{1}{T_b}.
+\]
+\begin{itemize}
+    \item Bandwidth efficient
+    \item Single error detection and correction capability
+    \item Zero DC
+\end{itemize}
+
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=0.8\linewidth,height=65mm,keepaspectratio]{figures/line-coding-spectra-comparison.png}
+    \caption{Line Coding Comparison}
+    \label{fig:}
+\end{minipage}
+\par\addvspace{7pt}
+
+\noteheading{1}{Achieving DC Null}
+We can force the PSD to have a DC Null by selecting a pulse p(t) such that P(f) is zero at DC. Since: $P(f) = \int_{-\infty}^{\infty}p(t)e^{-j2\pi f t}dt$, we have P(0) = 0
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=1\linewidth,height=65mm,keepaspectratio]{figures/manchester-pulse-and-bitstream.png}
+    \caption{Manchester Pulse with P(t)}
+    \label{fig:}
+\end{minipage}
+\par\addvspace{7pt}
+
+
+\begin{notederivation}[mode=steps]{Shifted half-bit pulses}
+    \notefigure[width=0.95\linewidth,maxheight=68mm,placement=here,label=fig:manchester-pulse-shifts]{figures/manchester-pulse-shifts.png}{Manchester pulse from two shifted half-bit pulses}
+
+    \derivestep{
+        g(t) &= \operatorname{rect}\left(\frac{t}{T_b/2}\right),
+        \qquad G(f)=\frac{T_b}{2}\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+    }{}
+
+    \derivestep{
+        p_1(t) &= g\left(t-\frac{T_b}{4}\right),
+        \qquad P_1(f)=\frac{T_b}{2}\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+        e^{-j2\pi fT_b/4} \\
+        p_2(t) &= -g\left(t-\frac{3T_b}{4}\right),
+        \qquad P_2(f)=-\frac{T_b}{2}\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+        e^{-j2\pi f(3T_b/4)}
+    }{}
+
+    \derivestep{
+        p(t) &= p_1(t)+p_2(t)
+        =\begin{cases}
+            +1 & 0\le t<T_b/2     \\
+            -1 & T_b/2\le t<T_b   \\
+            0  & \text{otherwise}
+        \end{cases}
+    }{}
+\end{notederivation}
+
+\begin{notederivation}[mode=steps]{Manchester pulse spectrum}
+    \derivestep{
+        P(f) &= P_1(f)+P_2(f) \\
+        &= \frac{T_b}{2}\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+        \left[e^{-j2\pi fT_b/4}-e^{-j2\pi f(3T_b/4)}\right] \\
+        &= \frac{T_b}{2}\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+        e^{-j\pi fT_b}
+        \left[e^{j\pi fT_b/2}-e^{-j\pi fT_b/2}\right]
+    }{}
+
+    \derivestep{
+        e^{j\alpha}-e^{-j\alpha} &= 2j\sin\alpha \\
+        P(f) &= jT_b\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+        \sin\left(\frac{\pi fT_b}{2}\right)e^{-j\pi fT_b}
+    }{}
+\end{notederivation}
+
+\keyequation{Magnitude of the Manchester Pulse Spectrum}{
+    |P(f)|=T_b\left|\operatorname{sinc}\left(\frac{fT_b}{2}\right)
+    \sin\left(\frac{\pi fT_b}{2}\right)\right|
+}
+
+\begin{notederivation}[mode=steps]{DC null}
+    \derivestep{
+        P(0) &= \int_{-\infty}^{\infty}p(t)\,dt
+        =\frac{T_b}{2}-\frac{T_b}{2}=0 \\
+        S_y(f) &= |P(f)|^2 S_x(f),\qquad S_y(0)=0
+    }{}
+\end{notederivation}
+
+\notefigure[width=0.9\linewidth,maxheight=60mm,placement=here,label=fig:manchester-pulse-spectrum]{figures/manchester-pulse-spectrum.png}{Manchester pulse spectrum with a DC null}
+
+\noteheading{1}{ISI}
+A pulse cannot be time-limited and band-limited at the same time. If the channel is band limited, then p(t) would be stretched in the time domain. The pulse stretching is referred as \textcolor{red}{time dispersion}, and the channel is called the \textcolor{red}{time dispersion channel}. Time dispersion causes overlap between adjacent symbols at the output of the channel.
+\notedefinition{ISI Characteristics}{
+    \begin{itemize}
+        \item ISI is a signal depedent noise
+        \item ISI cannot be suppressed by increasing the signals energy
+    \end{itemize}
+}
+\noteheading{2}{Two Types of Error-Performance Degradation}
+
+\begin{enumerate}
+    \item Decrease in received signal power or an increase in noise/interferance power, giving a rise to loss in $\frac{E_{b}}{N_{0}}$
+    \item Signal distortion, such is caused by ISI. This kind of distortion leads to the \textit{error-floor} phenomenon. Equalization is a technique that is used to cure ISI.
+\end{enumerate}
+
+\noteheading{2}{Pulse Shaping - Nyquist Criterion for Zero ISI}
+Zero ISI can be achieved by choosing the pulse:
+$$
+    p(t) = \begin{cases}
+        1 & t=0                                     \\
+        0 & t =\pm nT_{b} (T_{b} = \frac{1}{R_{b}})
+    \end{cases}
+$$
+
+The nyquist pulse satisfies ISI free.
+\keyequation{Nyquist Pulse}{
+    \begin{aligned}
+        \operatorname{sinc} (\pi R_{b} t) & = \begin{cases}
+                                                  1 & t=0                                  \\
+                                                  0 & t=\pm nT_{b} (T_{b}=\frac{1}{R_{b}})
+                                              \end{cases}
+        \\
+        \text{FT:}\quad P(f)              & = \frac{1}{R_{b}}\operatorname{rect}(\frac{f}{R_{b}}) \quad \text{where}\quad R_{b} = 2W
+    \end{aligned}
+}
+
+\noteheading{3}{Eye Diagrams}
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=1\linewidth,keepaspectratio]{figures/eye-diagram-construction-and-diagnostics.png}
+    \caption{Eye-Diagram Infographic}
+    \label{fig:}
+\end{minipage}
+\par\addvspace{7pt}
+
+\noteheading{2}{Frequency Domain Nyquist Criteria}
+Consider sampling of the pulse p(t) as: $p(t)\sum_{k}\delta(t-nT_{b}) = \delta(t)$, if we take FT of both sides we obtain:
+\keyequation{Frequency Domain Nyquist Criteria}{
+    \begin{aligned}
+                  & \frac{1}{T_b}\sum_{n=-\infty}^{\infty}P(f-nR_b)
+        = 1,\qquad R_b=\frac{1}{T_b}                                \\[5pt]
+        \text{OR} & \quad\sum_{n=-\infty}^{\infty}P(f-nR_b)
+        = T_b
+    \end{aligned}
+}
+Let $f_{x}$ denote the BW in excess of min. bandwidth $\frac{R_{b}}{2}$. The bandwidth of P(f) is $\frac{R_{b}}{2} + f_{x}$. Then let r be the ratio of the excess BW to the theoretic minimum then:
+\keyequation{Roll-off Factor}{r = \frac{\text{excess bandwidth}}{\text{theoretical minimum bandwidth}} = \frac{f_{x}}{\frac{R_{b}}{2} = \frac{2f_{x}}{R_{b}}}}
+
+Since $f_{x} < \frac{R_{b}}{2} \implies 0 \leq r \leq 1$, and min BW is: $\frac{R_{b}}{2}$ and excess BW is: $r \cdot \frac{R_{b}}{2}$, then the BW of P(f) is:
+$$
+    B_{T} = \frac{1+r}{2}R_{b}
+$$
+If we let $0 < x < f_{x}$, then: $\left| P(\frac{R_{b}}{2}+x)\right| + \left| P(\frac{R_{b}}{2}-x)\right| = T_{b}$
+\noteheading{2}{Raised Cosine Spectrum}
+\keyequation{Frequency Spectrum of the Raised-Cosine Function}{P(f) = \begin{cases}
+        1                                                          & |f|\leq \frac{R_{b}}{2} - f_{x} \\
+        \frac{1}{2} \{ 1 - \sin (\frac{\pi [f-R_{b}/2]}{2f_{x}})\} & |f-\frac{R_{b}}{2}| < f_{x}     \\
+        0                                                          & |f| > \frac{R_{b}}{2} + f_{x}
+    \end{cases}}
+
+\keyequation{Inverse Fourier of Raised Cosine Spectra}{\mathcal{F}^{-1}\{P(f)\} = R_{b} \frac{\cos (\pi rR_{b}t)}{1-4r^{2}R_{b}^{2}t^{2}} \operatorname{sinc} (\pi R_{b} t)}
+
+\par\addvspace{7pt}
+\noindent\begin{minipage}{\linewidth}
+    \centering
+    \captionsetup{hypcap=false,type=figure}
+    \includegraphics[width=0.8\linewidth,keepaspectratio]{figures/raised-cosine-spectra-and-pulses.png}
+    \caption{Raised Cosine Spectra}
+    \label{fig:}
+\end{minipage}
+\par\addvspace{7pt}
+
+With the increasing of r, p(t) improves. Specifically, as r increases, gradual cutoff in the spectrum reduces oscillatory nature of p(t) and causes it to decay more rapidly in the time-domain. If $r=1, f_{x} = \frac{R_{b}}{2}$ then:
+\[
+    P(f)=\frac12\left[1+\cos(\pi fT_b)\right]
+    \operatorname{rect}\left(\frac{f}{2R_b}\right)
+    =\cos^2\left(\frac{\pi fT_b}{2}\right)
+    \operatorname{rect}\left(\frac{fT_b}{2}\right)
+\]
+The corresponding impulse response is:
+\[
+    p(t)=R_b\,\frac{\cos(\pi R_bt)}{1-4R_b^2t^2}
+    \operatorname{sinc}(\pi R_bt).
+\]
+
+\textbf{Advantages} \begin{enumerate}
+    \item Low-pass filter P(f) is physically realizable
+    \item p(t) decreases proportionally to $\frac{1}{|t|^{3}}$
+\end{enumerate}
+\textbf{Disadvantages} \begin{enumerate}
+    \item lower efficiency of freq. spectrum (ideal case: $W=R_{b}/2$), raised cosine has BW: $W = (1+r) \frac{R_{b}}{2}$
+\end{enumerate}
+\keyequation{Transission BW Required for Raised Cosine Spectrum}{W=\frac{(1+r)R_{b}}{2}Hz \quad \text{and} \quad R_{b} = \frac{2}{1+r}W}
+
+
+
 
 \end{document}

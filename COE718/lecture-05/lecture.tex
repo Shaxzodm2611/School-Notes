@@ -1,0 +1,435 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{lecturenotes}
+\usepackage{enumitem,xurl}
+\setlist{itemsep=2pt,parsep=0pt,topsep=4pt}
+\raggedbottom
+\widowpenalty=10000
+\clubpenalty=10000
+\lectureheader{COE718}{5}
+\fancyfoot[C]{\sffamily\small\color{NoteMuted}\thepage}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\sourcefigure}[2]{%
+  \par\smallskip\noindent\begin{minipage}{\linewidth}\centering
+  \includegraphics[width=\linewidth,height=#2,keepaspectratio]{figures/#1}\par
+  \end{minipage}\par\smallskip}
+\begin{document}
+\tableofcontents
+\clearpage
+\textbf{Midterm up until Slide 35}\par
+
+\textbf{Question: 1-4, 7, 8, 10 -\textgreater{} 17}\par
+
+{\small\url{https://quizlet.com/ca/837451873/coe718-embedded-systems-design-midterm-review-slides-flash-cards/?i=zgmfy&x=1jqt}}\par
+
+\Needspace{75pt}
+\notesection{Priority-driven Scheduling}
+
+\Needspace{100pt}
+Rules:\par
+
+\begin{multicols}{2}\begin{itemize}
+\item \begin{minipage}[t]{\linewidth}Each process has a fixed priority (1 (lowest) - 3 (highest) )\end{minipage}
+\item \begin{minipage}[t]{\linewidth}Highest-priority ready process gets the CPU\end{minipage}
+\end{itemize}\end{multicols}
+
+\sourcefigure{image-234422.png}{85mm}
+
+\Needspace{75pt}
+\notesection{RTX Scheduling Options}
+
+Round-robin Pre-emptive is the default option\par
+
+\textbf{Preemptive:} Each task has a different priority and will run until it is preempted or has reached a blocking OS call\par
+
+\textbf{Round-robin:} Each task has the same priority and will run for a fixed period or time slice, OR until it has a reached a blocking OS call\par
+
+\textbf{Co-operative Multitasking:} Each task has the same priority and the round-robin is disabled. Each task will run until it reached a blocking OS call\par
+
+Use \code{os\_task\_pass()} for RTX\par
+
+\Needspace{75pt}
+\subnotesection{RTX:  Preemptive Scheduling}
+
+When a task with higher priority than the currently running task becomes ready to run, the currently running task is \emph{suspended}. A preemptive task switch occurs when:\par
+
+\begin{itemize}
+\item Task scheduler is executed from the system \emph{tick timer interrupt}. The scheduler then processes the delays of tasks, and if the delay for a task with the higher priority has expired, then the higher priority task starts to execute instead of the current task
+\item An \emph{event} is set for a higher priority task by the currently running task or a ISR. Current task is suspended and the new higher priority task starts to run.
+\item A token is returned to a \emph{semaphore}, and a higher priority task is waiting for the semaphore. The lower priority task suspends and returns the currently running task or by an interrupt service.
+\item A \emph{mutex} is released and a higher priority task is waiting for the mutex. The currently running task is suspended, and the higher priority task starts to run. 
+\item A \emph{message is posted to a mailbox}, if a higher priority task is waiting, then the current running task is suspended. The message can be posted by the currently running task or by an ISR
+\item A \emph{mailbox is full} and a higher priority task is waiting to post a message to a mailbox. As soon as the currently running task or an interrupt service routine takes a message out from the mailbox, the higher priority task starts to run
+\item If the \emph{priority of the currently running task is reduced}, \textbf{AND} a another task with higher priority is ready to run, the current task is suspended immediately, and the higher priority task resumes execution
+\end{itemize}
+
+\code{os\_tsk\_prio()} method changes the execution priority of the task identified by its argument \{task\_id\}.  I.e. \code{os\_tsk\_prio\_self (5);} or \code{os\_tsk\_prio(tsk2, 10);}\par
+
+\emph{Legacy RTX-Preemptive Switching Example found on Slide 7, 8}\par
+
+\Needspace{75pt}
+\noteheading{3}{Threads - Signals/Waits}
+
+The CMSIS RTOS RTX API provides support for threads and can be used in the following manner:\par
+
+\begin{minipage}{\linewidth}
+\begin{notecode}[language=C,basicstyle=\fontsize{9.5}{11}\selectfont\ttfamily\color{NoteInk}]
+void led_Thread1 (void const *arguement);
+osThreadDef(led_Thread1, osPriorityNormal, 1, 0);
+osThreadId Thr_led_ID1;
+
+int main(void){
+...
+	Thr_led_ID1 = osThreadCreate(osThread(led_Thread1), NULL);
+}
+\end{notecode}
+\end{minipage}
+
+A wait flag can be set as follows: \code{osSignalWait(0x30, osWaitForever}, this particular code is waiting for signal flag \code{0x30} to be asserted. osWaitForever indicates the maximum duration in msecs that the thread should wait to be signaled.\par
+
+\Needspace{100pt}
+A message can be sent or cleared to a thread as follows:\par
+
+\begin{itemize}
+\item \code{osSignalSet(Thr\_led\_ID1, 0x01);}
+\item \code{osSignalClear(Thr\_led\_ID1, 0x01);}
+\end{itemize}
+
+\Needspace{75pt}
+\notesection{RTX and Interrupt Functions}
+
+RTX can work with interrupt functions in parallel, however it is best practice to avoid \emph{IRQ nesting}. The diagram below shows a IRQ function can send a signal/message to start a high priority task. Interrupt functions are added to RTX projects in the same way as non-RTX projects, and \textbf{FIQ} interrupts are \emph{never disabled} by the kernel.\par
+
+\sourcefigure{image-235214.png}{85mm}
+
+\Needspace{75pt}
+\notesection{Scheduling Problem}
+
+The big question is: \emph{can we meet all the deadlines?}\par
+
+We must be able to meet deadlines in all cases therefore, how much CPU time do we need to meet the deadline\par
+
+\Needspace{100pt}
+Generally there are two different tasks:\par
+
+\begin{itemize}
+\item \textbf{Periodic Process} (most common): Executes on, \emph{almost}, every period
+\item \textbf{Aperiodic Process}: Executes on demand
+\end{itemize}
+
+Analyzing aperiodic processes are harder, since we must consider worst-case combinations of process activation -\textgreater{} \emph{Worst-case scenarios for which the tasks may activate}\par
+
+\sourcefigure{image-235856.png}{100mm}
+
+\Needspace{150pt}
+\notesection{Process Timing Requirements}
+
+\begingroup\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}X@{}}{\textbf{Term} & \textbf{Definition}}
+\textbf{Period} & Interval between process activations. \\
+\textbf{Initiation interval} & Reciprocal of the period: $1/T$ (as stated in the slide). \\
+\textbf{Initiation time (arrival time)} & Time at which a process becomes ready. \\
+\textbf{Deadline} & Time by which a process must finish. \\
+\textbf{Hard deadline} & Missing the deadline causes system failure. \\
+\textbf{Soft deadline} & Missing the deadline may be noticeable to the user, but does not necessarily cause system failure. \\
+\end{notetable}
+\endgroup
+
+\Needspace{120pt}
+\subnotesection{Process Model}
+
+\begin{multicols}{2}\begin{itemize}
+\item \begin{minipage}[t]{\linewidth}Applications are assumed to consist of a fixed set of processes\end{minipage}
+\item \begin{minipage}[t]{\linewidth}All processes are completely independent of each other\end{minipage}
+\item \begin{minipage}[t]{\linewidth}All system overheads, context-switching, etc are ignored (assumed to have 0 cost)\end{minipage}
+\item \begin{minipage}[t]{\linewidth}All processes are periodic with known periods\end{minipage}
+\item \begin{minipage}[t]{\linewidth}All processes have a deadline equal to their period (each process must complete it is next released)\end{minipage}
+\item \begin{minipage}[t]{\linewidth}All processes have a fixed worst-case execution time\end{minipage}
+\end{itemize}\end{multicols}
+
+\Needspace{75pt}
+\notesection{Real-time Scheduling Techniques}
+
+FPS deals with \emph{static priority}\par
+
+EDF deals with \emph{dynamic priority}\par
+
+\Needspace{75pt}
+\subnotesection{FPS: Fixed Priority Scheduling}
+
+Most widely used approach where each process has a \emph{fixed (static)} priority that is computed before execution.\par
+
+\begin{itemize}
+\item Runnable processes (in ready state) are executed in the order determined by their priority
+\item In real-time systems, the priority of a task/process is determined from its temporal requirements, not its importance to the integrity/correct functionality of the system
+\end{itemize}
+
+\Needspace{75pt}
+\noteheading{3}{Rate Monotonic Priority Assignment}
+
+Each process is assigned a unique priority based on its period. \textbf{The shorter the period, the higher the priority}\par
+
+For two processes:\par
+
+\[
+T_{i} < T_{j} \implies P_{i} > P_{j}
+\]
+
+Optimal priority assignment is when any process set can be scheduled (using preemptive priority based scheduling) with a fixed priority assignment scheme, then the given process set can also be scheduled with a rate monotonic assignment scheme.\par
+
+\emph{Deadline Based}: $D_i < D_j \implies P_i > P_j \quad \text{DMPO}$\par
+
+\begingroup\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}X@{}}{\textbf{Parameter} & \textbf{Definition}}
+\textbf{Period $T$} & Minimum time between process releases. \\
+\textbf{$C$} & Worst-case computation time (WCET) of the process. \\
+\textbf{$U$} & CPU utilization of the process: $U=C/T$. \\
+\textbf{$R$} & Worst-case response time of the process. \\
+\textbf{$B$} & Worst-case blocking time of the process. \\
+\textbf{$D$} & Deadline of the process; $D \le T$. \\
+\textbf{$N$} & Number of processes. \\
+\end{notetable}
+\endgroup
+
+\Needspace{75pt}
+\noteheading{4}{Utilization-based Analysis}
+
+For D=T process sets, a sufficient but not necessary schedulability test exists:\par
+
+\[
+U \equiv \sum^{N}_{i=1} \frac{C_i}{T_{t}}\leq N(2^{1/N} - 1)
+\]
+
+\begingroup\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}X@{}}{\textbf{N} & \textbf{Utilization bound}}
+\textbf{1} & 100.0\% \\
+\textbf{2} & 82.8\% \\
+\textbf{3} & 78.0\% \\
+\textbf{4} & 75.7\% \\
+\textbf{5} & 74.3\% \\
+\textbf{10} & 71.8\% \\
+\end{notetable}
+\endgroup
+
+\Needspace{75pt}
+\noteheading{5}{Example}
+
+The Process Set A has the following properties:\par
+
+\begingroup\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}{\textbf{Process} & \textbf{Period, T} & \textbf{Computation time, C} & \textbf{Priority, P} & \textbf{Utilization, U}}
+\textbf{a} & 50 & 12 & 1 & 0.24 \\
+\textbf{b} & 40 & 10 & 2 & 0.25 \\
+\textbf{c} & 30 & 10 & 3 & 0.33 \\
+\end{notetable}
+\endgroup
+
+The combined utilization is 0.82 which is higher than the threshold for 3 tasks (0.78) and therefore this process set fails the utilization test. \emph{Unsure on which one is schedulable}\par
+
+\sourcefigure{image-000658.png}{115mm}
+
+\Needspace{75pt}
+\subnotesection{Earliest Deadline First (EDF) Scheduling}
+
+Runnable processes are executed in the order determined by the \emph{absolute deadlines} of the processes. The next process to run being the one with the shortest deadline.\par
+
+\begin{itemize}
+\item It is possible to know the relative deadlines of each process, the \emph{absolute deadlines} are computed at run-time and that makes them \emph{dynamic}
+\end{itemize}
+
+\textbf{Value Based (VBS) Scheduling}\par
+
+If a system can be overloaded then simple static priorities or deadlines are not sufficient. This takes the form of assigning a value to each process and employing a on-line value-based scheduling algorithm to decide which process to run next.\par
+
+\Needspace{75pt}
+\noteheading{3}{Preemption and Non-Preemption}
+
+With priority-based scheduling, a high-priority task may be released during execution of a lower priority one.\par
+
+\begin{itemize}
+\item In a preemptive scheme, an immediate switch will occur (to the higher priority one)
+\item In a non-preemptive scheme, the lower-priority process will be allowed to complete before the other one executes.
+\item Preemptive schemes enable higher-priority processes to be more reactive and are why they are preferred.
+\item Alternative strategies such as \emph{deferred preemption} or \emph{cooperative dispatching} allow a lower priority process to continue to execute for a bounded time
+\item Schemes such as EDF and VBS can also take on preemptive or non-preemptive forms
+\end{itemize}
+
+\Needspace{100pt}
+\noteheading{3}{Utilization-based Test for EDF}
+
+\[
+\sum^N_{i=1} \frac{C_{i}}{T_{i}} \leq 1
+\]
+
+\begin{multicols}{2}\begin{itemize}
+\item \begin{minipage}[t]{\linewidth}Supports higher utilization vs. FPS, but FPS is easier to implement. \end{minipage}
+\item \begin{minipage}[t]{\linewidth}EDF is dynamic and requires a more complex run-time system that will have higher overhead\end{minipage}
+\item \begin{minipage}[t]{\linewidth}Easier to incorporate processes without deadlines into FPS, giving arbitrary deadlines is more artificial\end{minipage}
+\item \begin{minipage}[t]{\linewidth}Easier to incorporate other factors into the notion of priority than it into the notion of deadline\end{minipage}
+\end{itemize}\end{multicols}
+
+\Needspace{100pt}
+During overload:\par
+
+\begin{itemize}
+\item FPS is more predictable
+\item EDF is unpredictable; a domino effect can occur in which a large number of processes miss their deadline.
+\end{itemize}
+
+\Needspace{75pt}
+\noteheading{3}{Response Time Analysis}
+
+Task i's worst-case response time, $R$, is calculated first and checked (trivially) with its deadline.\par
+
+\[
+\begin{aligned}
+R_{i} &\leq D_{i} \\
+R_{i} &= C_{i} + I_{i} \quad \text{where I is the interference from higher priority tasks}
+\end{aligned}
+\]
+
+During R, each higher priority \emph{task j} will execute a no. of times\par
+
+\[
+\begin{aligned}
+&\text{Number of Releases} = \left[ \frac{R_{i}}{T_{j}}\right] \\ \\
+&\text{Total Interference} = \left[ \frac{R_{i}}{T_{j}} \right] C_{j}
+\end{aligned}
+\]
+
+\Needspace{100pt}
+\noteheading{4}{Response Time}
+
+\[
+R_{i} = C_{i} + \sum_{j\in hp(i)}\left[ \frac{R_{i}}{T_{j}} \right]C_{j}
+\]
+
+Where \emph{hp(i)} is the set of tasks with priority higher than task i. It is solved by using the recurrence relationship:\par
+
+\[
+w_{i}^{n+1} = C_{i} + \sum_{j\in hp(i)}\left[ \frac{w_{i}^n}{T_{j}} \right]C_{j}
+\]
+
+The set of values: $w^0_{i}, w^1_{i}, w^2_{i}, \dots, w^n_{i}$ is \emph{monotonically decreasing}. When $w_i^n = w_i^{n+1}$, the solution to the equation has been found. $w_i^0$ cannot be greater than $R_i$ (e.g. 0, or $C_i$)\par
+
+\textbf{Response Time Calculation Algorithm}\par
+
+\begin{minipage}{\linewidth}
+\begin{notecode}[language={},basicstyle=\fontsize{9.5}{11}\selectfont\ttfamily\color{NoteInk}]
+for i in 1..N loop -- for each process in turn
+    n := 0
+    w_i^n := C_i
+    loop
+        calculate new w_i^(n+1)
+        if w_i^(n+1) = w_i^n then
+            R_i = w_i^n
+            exit value found
+        end if
+        if w_i^(n+1) > T_i then
+            exit value not found
+        end if
+        n := n + 1
+    end loop
+end loop
+\end{notecode}
+\end{minipage}
+
+\Needspace{600pt}
+\noteheading{3}{Response Time Example}
+
+% Original source retained in figures/image-003053.png.
+\par\smallskip\noindent\begin{minipage}{\linewidth}
+{\sffamily\bfseries Response-time calculation\par}
+\begin{notepanels}[gap=8mm,widths={1.25,0.75}]
+\begin{notepanel}{Process Set D}
+\begingroup\small\setlength{\tabcolsep}{5pt}
+\begin{notetable}{@{}XXXX@{}}{\textbf{Process} & \textbf{Period $T$} & \textbf{Compute $C$} & \textbf{Priority $P$}}
+\textbf{a} & 7 & 3 & 3 \\
+\textbf{b} & 12 & 3 & 2 \\
+\textbf{c} & 20 & 5 & 1 \\
+\end{notetable}\endgroup
+{\sffamily\bfseries\small Process $a$\par}
+\[R_a=C_a=3\leq T_a=7\]
+\end{notepanel}
+\begin{notepanel}{Process $b$}
+\[\begin{aligned}
+w_b^0 &= 3 \\
+w_b^1 &= 3+\left\lceil\frac{3}{7}\right\rceil3=6 \\
+w_b^2 &= 3+\left\lceil\frac{6}{7}\right\rceil3=6
+\end{aligned}\]
+\[R_b=6\leq T_b=12\]
+\end{notepanel}
+\end{notepanels}
+{\sffamily\bfseries\small Process $c$\par}
+\begin{notepanels}[gap=6mm]
+\begin{notepanel}{}
+\[\begin{aligned}
+w_c^0 &= 5 \\
+w_c^1 &= 5+\left\lceil\frac{5}{7}\right\rceil3+\left\lceil\frac{5}{12}\right\rceil3=11 \\
+w_c^2 &= 5+\left\lceil\frac{11}{7}\right\rceil3+\left\lceil\frac{11}{12}\right\rceil3=14
+\end{aligned}\]
+\end{notepanel}
+\begin{notepanel}{}
+\[\begin{aligned}
+w_c^3 &= 5+\left\lceil\frac{14}{7}\right\rceil3+\left\lceil\frac{14}{12}\right\rceil3=17 \\
+w_c^4 &= 5+\left\lceil\frac{17}{7}\right\rceil3+\left\lceil\frac{17}{12}\right\rceil3=20 \\
+w_c^5 &= 5+\left\lceil\frac{20}{7}\right\rceil3+\left\lceil\frac{20}{12}\right\rceil3=20
+\end{aligned}\]
+\end{notepanel}
+\end{notepanels}
+\[w_c^5=w_c^4\quad\Longrightarrow\quad R_c=20\leq T_c=20\]
+{\sffamily\bfseries\small\color{NoteAccent}All deadlines met\par}
+\medskip
+{\sffamily\bfseries\small Process Set C\par}
+\begingroup\small
+\begin{notetable}{@{}XXXXX@{}}{\textbf{Process} & \textbf{Period $T$} & \textbf{Compute $C$} & \textbf{Priority $P$} & \textbf{Response $R$}}
+\textbf{a} & 80 & 40 & 1 & 80 \\
+\textbf{b} & 40 & 10 & 2 & 15 \\
+\textbf{c} & 20 & 5 & 3 & 5 \\
+\end{notetable}\endgroup
+\[U=\frac{40}{80}+\frac{10}{40}+\frac{5}{20}=1.00>0.78\quad\longrightarrow\quad\text{Utilization test fails}\]
+\[R_a=80\leq80,\quad R_b=15\leq40,\quad R_c=5\leq20\]
+{\sffamily\bfseries\small\color{NoteAccent}RTA passes: all deadlines met\par}
+RTA is necessary and sufficient under the assumed task model.\par
+\end{minipage}\par\smallskip
+
+
+\Needspace{120pt}
+\subnotesection{Worst-case Execution Time - WCET}
+
+\begin{itemize}
+\item Obtained by either measurement or analysis. Measurement makes it difficult to be sure that the worst case has been observed. Analysis requires an effective model of the processor to be available.
+\end{itemize}
+
+\Needspace{200pt}
+\noteheading{3}{WCET Analysis Techniques}
+
+\Needspace{100pt}
+Most analysis techniques involve two distinct activities:\par
+
+\begin{itemize}
+\item First takes the process and decomposes the code into a directed graph of basic blocks
+\begin{itemize}
+\item These basic blocks represent \emph{straight-line} code
+\end{itemize}
+\item Second takes the machine code corresponding to a basic block, and uses the processor model to estimates it worst-case execution time
+\begin{itemize}
+\item Once the times for all the basic blocks are known, the directed graph can be collapsed
+\end{itemize}
+\end{itemize}
+
+\Needspace{75pt}
+\notesection{Hard and Soft Real-time Processes}
+
+\textbf{Hard Real-time Process}: Deadline cannot be missed\par
+
+\Needspace{100pt}
+\textbf{Soft Real-time Process}: Application is tolerant of missed deadlines\par
+
+\begin{itemize}
+\item The \emph{WCET} figures for sporadic processes are considerably higher than average
+\begin{itemize}
+\item Measuring schedulability with worst-case figures can lead to very low processor utilizations
+\item Interrupts can come in bursts, and may lead to significant additional computation
+\end{itemize}
+\end{itemize}
+\end{document}
