@@ -207,7 +207,7 @@ To determine $r_{eq} = V_x/I_x$, apply a small test voltage $V_x$ about a bias p
     \label{fig:}
 \end{figure}
 
-\keyequation{Gain of a CS Amplifier with a Current Source Load}{A_V = g_{m1} (r_{o1} || r_{o2})}[Note that $g_{m2}$ is proportional to $I_d$ or $\frac{W}{L}$]
+\keyequation{Gain of a CS Amplifier with a Current Source Load}{A_V = -g_{m1} (r_{o1} \parallel r_{o2})}[Note that $g_{m2}$ is proportional to $I_d$ or $\frac{W}{L}$]
 
 \Needspace{72mm}
 \notesection{Increasing the Gain of a Single Stage Amp}
@@ -411,13 +411,62 @@ and $v_{\mathrm{out}}=-i_{\mathrm{out}}R_o$ using the current direction defined 
 }[Using $G_M\approx g_{m1}$ and neglecting $r_{o1}+r_{o2}$ when
 $(g_{m2}+g_{mb2})r_{o1}r_{o2}\gg r_{o1}+r_{o2}$.]
 
+\Needspace{205mm}
 \notesection{Source Follow \& Common Gate Amplifiers}
 
-\begin{figure}[htbp]
+\begin{figure}[!ht]
     \centering
     \includegraphics[width=0.8\linewidth]{figures/source-follower-vs-common-gate.png}
     \caption{Source Follower and Common-Gate Configuration}
     \label{fig:}
 \end{figure}
+
+\assumption{Midband operation in saturation, with grounded bodies. DC voltage sources are AC grounds, $C_1$ is an AC short, and the ideal bias current source $I_1$ is an AC open circuit.}
+
+\keyequation{Gain of a Source Follower}{
+    A_V \equiv \frac{v_{\mathrm{out}}}{v_{\mathrm{in}}}
+    = \frac{g_m(R_S\parallel r_o)}{1+(g_m+g_{mb})(R_S\parallel r_o)}
+}[For the follower alone, $v_{\mathrm{in}}$ is its gate voltage, $v_{\mathrm{out}}$ is its source voltage, and $R_S$ is the source resistor.
+With $g_{mb}=0$ and $r_o\gg R_S$, $A_V\approx\dfrac{g_mR_S}{1+g_mR_S}\approx1$ when $g_mR_S\gg1$.]
+
+\keyequation{Gain of a Common-Gate Amplifier}{
+    A_V \equiv \frac{v_{\mathrm{out}}}{v_{\mathrm{in}}}
+    = \frac{\bigl[1+(g_m+g_{mb})r_o\bigr]R_D}{r_o+R_D}
+}[For $r_o\gg R_D$ and $(g_m+g_{mb})r_o\gg1$, $A_V\approx(g_m+g_{mb})R_D$.
+Neglecting body effect gives $A_V\approx g_mR_D$.]
+
+\Needspace{125mm}
+\notesection{Amplifier Gain Summary}
+
+\assumption{All stages operate in saturation at midband.}
+
+\begingroup
+\small
+\begin{notetable}{@{}>{\raggedright\arraybackslash}p{0.27\linewidth}>{\centering\arraybackslash}p{0.27\linewidth}>{\raggedright\arraybackslash}X@{}}{\textbf{Amplifier type} & \textbf{Gain, $A_V$} & \textbf{Assumptions}}
+    CS with PMOS current-source load
+    & $-g_{m1}(r_{o1}\parallel r_{o2})$
+    & Bias voltages at AC ground; finite $r_{o1},r_{o2}$ (CLM retained). \\
+    \addlinespace[5pt]
+    CS with diode-connected load
+    & $\displaystyle -\frac{g_{m1}}{g_{m2}}$
+    & $r_{o1},r_{o2}\gg1/g_{m2}$; no body effect. \\
+    \addlinespace[5pt]
+    CS with resistive load
+    & $-g_mR_D$
+    & $r_o\gg R_D$ (negligible CLM loading); source at AC ground. \\
+    \addlinespace[5pt]
+    Cascode with ideal current source
+    & $-g_{m1}g_{m2}r_{o1}r_{o2}$
+    & $g_{m2}r_{o1},g_{m2}r_{o2}\gg1$; no body effect; ideal bias current source; CLM retained. \\
+    \addlinespace[5pt]
+    Source follower
+    & $\displaystyle \frac{g_mR_S}{1+g_mR_S}\approx1$
+    & $r_o\gg R_S$; no body effect. Unity approximation: $g_mR_S\gg1$. \\
+    \addlinespace[5pt]
+    Common gate
+    & $g_mR_D$
+    & $r_o\gg R_D$, $g_mr_o\gg1$; no body effect. \\
+\end{notetable}
+\endgroup
 
 \end{document}

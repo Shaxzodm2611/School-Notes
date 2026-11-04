@@ -1,0 +1,212 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{lecturenotes}
+\lectureheader{ELE727}{5}
+\begin{document}
+\tableofcontents
+\noteheading{1}{Frequency-response Review}
+\noteheading{2}{High-pass Filter}
+\begin{notepanels}[widths={1,1.5},gap=8mm,align=top]
+    \begin{notepanel}{}
+        \begin{notecircuit}[american,scale=0.85,transform shape,
+            font=\large]{RC high-pass filter}
+            \draw (0,2.1) node[ocirc] {} node[left] {$V_{\mathrm{in}}$}
+                to[C,l=$C$] (2.3,2.1) coordinate (out)
+                to[R,l=$R$] (2.3,0) node[circ] {};
+            \node[below,NoteAccent] at (1.15,1.8) {$\dfrac{1}{sC}$};
+            \draw (out) node[circ] {} -- ++(0.55,0)
+                node[ocirc] {} node[right] {$V_{\mathrm{out}}$};
+            \draw (0,0) node[ocirc] {} -- (2.85,0) node[ocirc] {};
+        \end{notecircuit}
+    \end{notepanel}
+    \begin{notepanel}{}
+        \begin{notesignal}[width=0.94\linewidth,height=4.5cm,
+            xmode=log,log basis x=10,xmin=0.01,xmax=100,
+            ymin=-42,ymax=3,ytick={0},grid=none,
+            xtick={1},xticklabels={$\omega_p$},xlabel={$\omega$},
+            ylabel={$20\log_{10}|H(j\omega)|$},
+            tick label style={font=\scriptsize},
+            yticklabel style={text width=2.3em,align=right},
+            label style={font=\small},
+            clip=false]{Bode magnitude}
+            \addplot[NoteMuted,densely dashed,thin]
+                coordinates {(0.01,-40) (1,0) (100,0)};
+            \addplot[domain=-2:2,samples=201,variable=\t]
+                ({10^\t},{-10*log10(1+10^(-2*\t))});
+            \draw[NoteMuted,densely dotted,thin]
+                (axis cs:1,-42) -- (axis cs:1,0);
+            \node[above,font=\scriptsize,NoteAccent,rotate=37]
+                at (axis cs:0.09,-20) {$20\,\mathrm{dB/dec}$};
+        \end{notesignal}
+    \end{notepanel}
+\end{notepanels}
+
+Recall: $Z_C=\frac{1}{sC}$ where $s=j\omega$
+
+\begin{notederivation}{Transfer Function of a High-pass Filter}
+    \frac{V_{\mathrm{out}}(s)}{V_{\mathrm{in}}(s)}
+        &= \frac{R}{R+\frac{1}{sC}} \\
+        &= \frac{sCR}{1+sCR}
+\end{notederivation}
+\keyequation{Transfer Function of a High-pass Filter}{
+    |H(j\omega)| = \left|\frac{j\omega CR}{1+j\omega CR}\right|
+}
+
+
+\clearpage
+\noteheading{2}{First and Second Order Frequency Responses}
+
+\par\addvspace{3pt}
+\begingroup
+    \setlength{\tabcolsep}{4mm}
+    \arrayrulecolor{NoteRule}
+    \newcommand{\responseyscale}{6.5mm}
+    \newcommand{\polefreq}[1]{\textcolor{red}{\omega_{p#1}}}
+    \newcommand{\zerofreq}[1]{\textcolor{blue}{\omega_{z#1}}}
+    \tikzset{
+        response-axis/.style={NoteMuted,line width=0.4pt,
+            -{Latex[length=3pt,width=2pt]}},
+        response-curve/.style={NoteAccent,line width=0.8pt},
+        response-guide/.style={NoteMuted,densely dotted,line width=0.35pt},
+        response-pole/.style={response-guide,red},
+        response-zero/.style={response-guide,blue}}
+    \newcommand{\responsecell}[3]{%
+        \begin{minipage}[t]{\linewidth}\centering\vspace{0pt}
+            {\sffamily\small\bfseries\color{NoteMuted}#1\par}
+            \vspace{1mm}
+            {\normalsize\(\displaystyle #2\)\par}
+            \vspace{3mm}
+            \begin{tikzpicture}[x=12mm,y=\responseyscale,font=\footnotesize,color=NoteInk,
+                every node/.append style={inner sep=3pt}]
+                \path[use as bounding box] (-0.2,-0.65) rectangle (4.95,4.75);
+                \draw[response-axis] (0,-0.15) -- (0,4.1);
+                \draw[response-axis] (-0.15,0) -- (4.6,0)
+                    node[right] {$\omega$};
+                \node[anchor=west] at (-0.2,4.45)
+                    {$20\log_{10}|H(j\omega)|$};
+                #3
+            \end{tikzpicture}
+        \end{minipage}}
+    \noindent\begin{tabularx}{\linewidth}{@{}X!{\color{NoteRule}\vrule width 0.4pt}X@{}}
+        \toprule
+        \addlinespace[1mm]
+        \responsecell{1 pole}{
+            H(j\omega)=\frac{K}{j\omega+\polefreq{1}}
+        }{
+            \draw[response-curve] (0,3.6) -- (1.8,3.6) -- (4.3,1.35);
+            \draw[response-pole] (1.8,0) -- (1.8,3.6);
+            \node[below] at (1.8,0) {$\polefreq{1}$};
+            \node[above,rotate=-26,NoteAccent] at (3,2.52)
+                {$-20\,\mathrm{dB/dec}$};
+        }
+        &
+        \responsecell{1 pole, 1 zero at DC}{
+            H(j\omega)=\frac{K\textcolor{blue}{j\omega}}{j\omega+\polefreq{1}}
+        }{
+            \draw[response-curve] (0.1,2.07) -- (1.8,3.6) -- (4.3,3.6);
+            \draw[response-pole] (1.8,0) -- (1.8,3.6);
+            \node[below] at (1.8,0) {$\polefreq{1}$};
+            \node[above,rotate=26,NoteAccent] at (0.9,2.79)
+                {$+20\,\mathrm{dB/dec}$};
+        }
+        \\[1mm]
+        \bottomrule
+    \end{tabularx}
+    \par\addvspace{4pt}
+    \renewcommand{\responseyscale}{8mm}
+    \noindent\begin{tabularx}{\linewidth}{@{}X!{\color{NoteRule}\vrule width 0.4pt}X@{}}
+        \toprule
+        \addlinespace[2mm]
+        \responsecell{2 poles}{
+            H(j\omega)=\frac{K}{(j\omega+\polefreq{1})(j\omega+\polefreq{2})}
+        }{
+            \draw[response-curve] (0,3.6) -- (1.35,3.6)
+                -- (2.7,2.385) -- (4.1,-0.135);
+            \draw[response-pole] (1.35,0) -- (1.35,3.6);
+            \draw[response-pole] (2.7,0) -- (2.7,2.385);
+            \node[below] at (1.35,0) {$\polefreq{1}$};
+            \node[below] at (2.7,0) {$\polefreq{2}$};
+            \node[above,rotate=-31,NoteAccent] at (2.15,3.15)
+                {$-20\,\mathrm{dB/dec}$};
+            \node[above,rotate=-50,NoteAccent] at (3.45,1.25)
+                {$-40\,\mathrm{dB/dec}$};
+        }
+        &
+        \responsecell{2 poles, 1 zero}{
+            H(j\omega)=\frac{K(j\omega+\zerofreq{1})}
+                {(j\omega+\polefreq{1})(j\omega+\polefreq{2})}
+        }{
+            \draw[response-curve] (0,3.6) -- (0.9,3.6)
+                -- (2,2.61) -- (3.1,0.63) -- (4.25,-0.405);
+            \draw[response-pole] (0.9,0) -- (0.9,3.6);
+            \draw[response-pole] (2,0) -- (2,2.61);
+            \draw[response-zero] (3.1,0) -- (3.1,0.63);
+            \node[NoteMuted] at (3.3,3.25)
+                {$\polefreq{1}<\polefreq{2}<\zerofreq{1}$};
+            \node[below] at (0.9,0) {$\polefreq{1}$};
+            \node[below] at (2,0) {$\polefreq{2}$};
+            \node[below] at (3.1,0) {$\zerofreq{1}$};
+            \node[above,rotate=-31,NoteAccent] at (1.45,3.105) {$-20$};
+            \node[above,rotate=-50,NoteAccent] at (2.55,1.62) {$-40$};
+            \node[above,rotate=-31,NoteAccent] at (3.7,0.7)
+                {$-20\,\mathrm{dB/dec}$};
+        }
+        \\[2mm]
+        \bottomrule
+    \end{tabularx}
+    \par\addvspace{4pt}
+    \noindent\begin{tabularx}{\linewidth}{@{}X!{\color{NoteRule}\vrule width 0.4pt}X@{}}
+        \toprule
+        \addlinespace[2mm]
+        \responsecell{2 poles, 1 zero at DC}{
+            H(j\omega)=\frac{K\textcolor{blue}{j\omega}}
+                {(j\omega+\polefreq{1})(j\omega+\polefreq{2})}
+        }{
+            \draw[response-curve] (0.1,2.07) -- (1.8,3.6)
+                -- (3,3.6) -- (4.3,2.43);
+            \draw[response-pole] (1.8,0) -- (1.8,3.6);
+            \draw[response-pole] (3,0) -- (3,3.6);
+            \node[below] at (1.8,0) {$\polefreq{1}$};
+            \node[below] at (3,0) {$\polefreq{2}$};
+            \node[above,rotate=31,NoteAccent] at (0.9,2.95)
+                {$+20\,\mathrm{dB/dec}$};
+            \node[above,rotate=-31,NoteAccent] at (3.7,3.3)
+                {$-20\,\mathrm{dB/dec}$};
+        }
+        &
+        \responsecell{2 poles, 1 zero}{
+            H(j\omega)=\frac{K(j\omega+\zerofreq{1})}
+                {(j\omega+\polefreq{1})(j\omega+\polefreq{2})}
+        }{
+            \draw[response-curve] (0,3.6) -- (1,3.6)
+                -- (2.1,2.61) -- (3,2.61) -- (4.3,1.44);
+            \draw[response-pole] (1,0) -- (1,3.6);
+            \draw[response-zero] (2.1,0) -- (2.1,2.61);
+            \draw[response-pole] (3,0) -- (3,2.61);
+            \node[NoteMuted] at (3.15,4.25)
+                {$\polefreq{1}<\zerofreq{1}<\polefreq{2}$};
+            \node[below] at (1,0) {$\polefreq{1}$};
+            \node[below] at (2.1,0) {$\zerofreq{1}$};
+            \node[below] at (3,0) {$\polefreq{2}$};
+            \node[above,rotate=-31,NoteAccent] at (1.6,3.3)
+                {$-20\,\mathrm{dB/dec}$};
+            \node[above,NoteAccent] at (2.55,2.9) {$0$};
+            \node[above,rotate=-31,NoteAccent] at (3.75,2.2)
+                {$-20\,\mathrm{dB/dec}$};
+        }
+        \\[2mm]
+        \midrule
+        \multicolumn{2}{p{\dimexpr\linewidth-2\tabcolsep\relax}}{%
+            \cellcolor{NoteTint}%
+            \begin{minipage}{\linewidth}\centering
+                \vspace{3mm}
+                {\sffamily\small\color{NoteInk}
+                    Zeros need to be at higher frequencies otherwise it will block attenuation\par}
+                \vspace{3mm}
+            \end{minipage}}
+        \\
+        \bottomrule
+    \end{tabularx}
+\endgroup
+
+\clearpage
+\end{document}
