@@ -103,6 +103,7 @@ Type these at the beginning of a line, optionally after indentation:
 | `;h1` through `;h5`        | `\noteheading{1}{title}` through `\noteheading{5}{title}`                             |
 | `;def`                     | `\notedefinition{title}{body}`                                                        |
 | `;keq`                     | `\keyequation{title}{math}`                                                           |
+| `;sbox`                    | `notesummarybox` with a title and body                                                |
 | `;der`                     | `notederivation` with an optional explanation column                                  |
 | `;fig`                     | Inline `\includegraphics` with image-path completion, caption, label, and width limit |
 | `;tbl`                     | Notes table with columns, header, and row fields                                      |
@@ -121,7 +122,14 @@ sets their depths independently; all headings remain in the lecture body.
 `;sec` and `;sub`
 remain available. Use **HyperSnips: Reload Snippets** after updating this file.
 
-The new blocks require `lecturenotes.sty` v0.2.0. `;drv` selects `mode=steps`
+The summary block requires `lecturenotes.sty` v0.2.1. Its solid teal title bar,
+white body, and thin border distinguish it from equation and definition blocks.
+Enter the title, press Tab for the body, and Tab again to exit. Remove the title's
+square brackets to use the default `Summary`. The box stays on one page.
+Use `aligned` inside a display for equation line breaks. Run `notes update-style`
+to add the block to existing lecture styles.
+
+The other new blocks require `lecturenotes.sty` v0.2.0. `;drv` selects `mode=steps`
 so math shortcuts expand inside each equation and explanations stay in prose.
 `;der` retains its original expansion. Panel widths can be customized with
 `widths={2,1}`; use `placement=float` on a standard figure for normal LaTeX

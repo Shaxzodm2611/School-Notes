@@ -183,6 +183,9 @@ for (let level = 1; level <= 5; level++) {
 noAuto(";h6");
 expect(";nav", "\\notesetup{toc-depth=$1,bookmark-depth=$2}\n$0", "");
 expect(";hbm", "\\noteheading[bookmark={$1}]{$2}{$3}\n$0", "");
+const summarySnippet = expect(";sbox", "\\begin{notesummarybox}[$1]\n    $2\n\\end{notesummarybox}\n$0", "");
+assert.deepEqual(summarySnippet.instance.placeholderIds, [1, 2, 0], "Summary fields must be title, body, then exit");
+checks++;
 const figureSnippet = expect(";fig", "\\par\\addvspace{7pt}\n\\noindent\\begin{minipage}{\\linewidth}\n    \\centering\n    \\captionsetup{hypcap=false,type=figure}\n    \\includegraphics[width=0.8\\linewidth,keepaspectratio]{figures/$1}\n    \\caption{$2}\n    \\label{fig:$3}\n\\end{minipage}\n\\par\\addvspace{7pt}\n$0", "");
 assert.deepEqual(figureSnippet.instance.placeholderIds, [1, 2, 3, 0], "Figure fields must be path, caption, label, then exit");
 assert.equal(figureSnippet.instance.selectedPlaceholder, 1, "Figure starts in the image path");
@@ -207,7 +210,7 @@ for (const columns of [2, 3]) {
     assert.deepEqual(panel.instance.placeholderIds, [...Array.from({length:columns*2}, (_,i)=>i+1),0]);
 }
 expect(";panel", "\\begin{notepanel}{$1}\n    $2\n\\end{notepanel}\n$0", "");
-for (const trigger of [";pan2", ";pan3", ";drv", ";fig", ";nav", ";hbm", ";cset", ";cir", ";cur", ";mark"]) {
+for (const trigger of [";sbox", ";pan2", ";pan3", ";drv", ";fig", ";nav", ";hbm", ";cset", ";cir", ";cur", ";mark"]) {
     noAuto("Ordinary prose: " + trigger);
     noAuto("% " + trigger);
     noAuto("\\begin{notecode}\n" + trigger);
@@ -286,6 +289,7 @@ if (process.argv.includes("--compile")) {
         + fill("mk", {1:"x+1"}, "") + "\n"
         + samples.map(sample => "\\["+sample+"\\]\n").join("")
         + fill(";keq", {1:"Generated equation",2:"x^2+y^2"}, "")
+        + fill(";sbox", {1:"Generated summary",2:"A recap with ordinary prose and inline math $x=y$."}, "")
         + fill(";der", {1:"Generated derivation",2:"x=y",3:"Equality"}, "")
         + fill(";drv", {1:"Wrapping derivation",2:"x=y",3:"An explanation that wraps as normal text below the equation."}, "")
         + fill(";pan2", {1:"First",2:"First panel",3:"Second",4:"Second panel"}, "")

@@ -1385,6 +1385,14 @@ $0
 endsnippet
 
 context text(context)
+snippet ;sbox "Summary box" bA
+\begin{notesummarybox}[$1]
+    $2
+\end{notesummarybox}
+$0
+endsnippet
+
+context text(context)
 snippet ;tbl "Notes table" bA
 \begin{notetable}{$1}{$2}
     $3 \tabularnewline
